@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum PenVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum RevisionKind {
+  AUTOSAVE
+  SNAPSHOT
+  FORK
+}
+
+model User {
+  id              String        @id @default(uuid()) @db.Uuid
+  email           String        @unique @db.Citext
+  passwordHash    String
+  displayName     String?
+  role            UserRole      @default(USER)
+  emailVerifiedAt DateTime?
+  settings        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  sessions    Session[]
+  pens        Pen[]
+  revisions   PenRevision[]
+  userSetting UserSetting?
+  auditEvents AuditEvent[]
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  token      String    @unique
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  ip         String?
+  userAgent  String?
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  auditEvents AuditEvent[]
+}
+
+model Pen {
+  id            String        @id @default(uuid()) @db.Uuid
+  ownerId       String        @db.Uuid
+  owner         User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title         String
+  slug          String        @unique
+  visibility    PenVisibility @default(PRIVATE)
+  forkedFromId  String?       @db.Uuid
+  forkedFrom    Pen?          @relation("PenForks", fields: [forkedFromId], references: [id])
+  forks         Pen[]         @relation("PenForks")
+  tagsCache     String[]      @db.Text
+  previewHash   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  revisions PenRevision[]
+  tags      PenTag[]
+
+  @@index([ownerId, updatedAt(sort: Desc)])
+}
+
+model PenRevision {
+  id           String       @id @default(uuid()) @db.Uuid
+  penId        String       @db.Uuid
+  pen          Pen          @relation(fields: [penId], references: [id], onDelete: Cascade)
+  authorId     String       @db.Uuid
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  revNumber    Int
+  kind         RevisionKind @default(AUTOSAVE)
+  html         String       @db.Text
+  css          String       @db.Text
+  js           String       @db.Text
+  meta         Json?
+  compiledHash String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([penId, revNumber])
+  @@index([penId, createdAt])
+}
+
+model Tag {
+  id         Int       @id @default(autoincrement())
+  slug       String    @unique
+  label      String
+  usageCount Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  pens PenTag[]
+}
+
+model PenTag {
+  penId    String   @db.Uuid
+  tagId    Int
+  pen      Pen      @relation(fields: [penId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([penId, tagId])
+}
+
+model UserSetting {
+  userId       String   @id @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  editorLayout Json?
+  featureFlags Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  sessionId String?  @db.Uuid
+  type      String
+  ip        String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id])
+  session Session? @relation(fields: [sessionId], references: [id])
+
+  @@index([type, createdAt])
+  @@index([userId, createdAt])
+}
