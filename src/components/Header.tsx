@@ -17,12 +17,12 @@ type NavLink = {
 
 const baseLinks: Array<NavLink> = [
   {
-    to: '/',
-    label: 'Home',
-  },
-  {
     to: '/app',
     label: 'Dashboard',
+  },
+  {
+    to: '/',
+    label: 'Home',
   },
 ]
 
