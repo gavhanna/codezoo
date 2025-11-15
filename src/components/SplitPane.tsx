@@ -1,6 +1,20 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react'
 import { GripVertical, Monitor } from 'lucide-react'
-import Editor from '@monaco-editor/react'
+import { emmetCSS, emmetHTML } from 'emmet-monaco-es'
+import Editor, { type Monaco } from '@monaco-editor/react'
+
+let isEmmetInitialized = false
+
+const enableEmmetSupport = (monaco: Monaco) => {
+  if (isEmmetInitialized) {
+    return
+  }
+
+  // Register Emmet once for the languages we expose in the editor panes
+  emmetHTML(monaco, ['html'])
+  emmetCSS(monaco, ['css'])
+  isEmmetInitialized = true
+}
 
 interface SplitPaneProps {
   left: React.ReactNode
@@ -181,6 +195,7 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
           height="100%"
           language={language}
           defaultValue={value}
+          beforeMount={enableEmmetSupport}
           onChange={(value) => onChange(value || '')}
           theme="vs-dark"
           options={{
