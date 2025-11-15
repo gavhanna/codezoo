@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react'
-import { GripVertical, Monitor } from 'lucide-react'
+import { GripVertical, Monitor, Minimize2 } from 'lucide-react'
 import { emmetCSS, emmetHTML } from 'emmet-monaco-es'
 import Editor, { type Monaco } from '@monaco-editor/react'
 
@@ -170,6 +170,8 @@ interface CodeEditorPaneProps {
   icon?: React.ReactNode
   className?: string
   editorKey?: string | number
+  onCollapse?: () => void
+  collapseDisabled?: boolean
 }
 
 export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
@@ -180,6 +182,8 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
   icon,
   className = '',
   editorKey,
+  onCollapse,
+  collapseDisabled = false,
 }) => {
   return (
     <div className={`bg-slate-900 border border-white/5 rounded-2xl overflow-hidden flex flex-col h-full ${className}`}>
@@ -188,13 +192,28 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
           {icon}
           <h3 className="text-sm font-medium text-gray-300">{title}</h3>
         </div>
+        {onCollapse && (
+          <button
+            onClick={onCollapse}
+            disabled={collapseDisabled}
+            className={`p-1 rounded-lg transition-colors ${
+              collapseDisabled
+                ? 'text-slate-600 cursor-not-allowed'
+                : 'text-gray-400 hover:text-white hover:bg-slate-700'
+            }`}
+            title={collapseDisabled ? 'At least one editor must stay open' : 'Collapse editor'}
+            aria-label="Collapse editor"
+          >
+            <Minimize2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
       <div className="flex-1 min-h-0">
         <Editor
           key={editorKey}
           height="100%"
           language={language}
-          defaultValue={value}
+          value={value}
           beforeMount={enableEmmetSupport}
           onChange={(value) => onChange(value || '')}
           theme="vs-dark"
