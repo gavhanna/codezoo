@@ -1,13 +1,9 @@
 import type { startInstance } from '@/start'
-import type { PrismaClient } from '@prisma/client'
-
-type ServerContext = {
-  prisma: PrismaClient
-}
+import type { AppServerContext } from '@/server/context'
 
 declare module '@tanstack/react-start' {
   interface Register {
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
-    context: ServerContext
+    context: AppServerContext
   }
 }

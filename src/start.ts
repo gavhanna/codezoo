@@ -1,34 +1,28 @@
 import { createMiddleware, createStart } from '@tanstack/react-start'
+import { buildServerContext } from '@/server/context'
 
-type ContextBag = Record<string, unknown> | undefined
+const requestContextMiddleware = createMiddleware({
+  type: 'request',
+}).server(async ({ request, context, next }) => {
+  if (!import.meta.env.SSR) {
+    return next({ context })
+  }
 
-const withPrismaContext =
-  import.meta.env.SSR
-    ? async (existing?: ContextBag) => {
-        const { prisma } = await import('@/server/db')
-        return {
-          ...(existing ?? {}),
-          prisma,
-        }
-      }
-    : async (existing?: ContextBag) => existing ?? {}
+  const resolvedContext = await buildServerContext(request, context)
+  const result = await next({
+    context: resolvedContext,
+  })
 
-const prismaRequestMiddleware = createMiddleware({ type: 'request' }).server(
-  async ({ context, next }) =>
-    next({
-      context: await withPrismaContext(context),
-    }),
-)
+  const pendingCookies = result.context?.pendingCookies
+  if (pendingCookies?.length) {
+    pendingCookies.forEach((cookie) => {
+      result.response.headers.append('Set-Cookie', cookie)
+    })
+  }
 
-const prismaFunctionMiddleware = createMiddleware({
-  type: 'function',
-}).server(async ({ context, next }) =>
-  next({
-    context: await withPrismaContext(context),
-  }),
-)
+  return result
+})
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [prismaRequestMiddleware],
-  functionMiddleware: [prismaFunctionMiddleware],
+  requestMiddleware: [requestContextMiddleware],
 }))
