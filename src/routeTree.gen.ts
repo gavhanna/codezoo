@@ -10,12 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as PSlugRouteImport } from './routes/p/$slug'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AppPPenIdRouteImport } from './routes/app/p/$penId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/app/',
+  path: '/app/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
@@ -28,35 +41,71 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPPenIdRoute = AppPPenIdRouteImport.update({
+  id: '/app/p/$penId',
+  path: '/app/p/$penId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/p/$slug': typeof PSlugRoute
+  '/app': typeof AppIndexRoute
+  '/app/p/$penId': typeof AppPPenIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/p/$slug': typeof PSlugRoute
+  '/app': typeof AppIndexRoute
+  '/app/p/$penId': typeof AppPPenIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/p/$slug': typeof PSlugRoute
+  '/app/': typeof AppIndexRoute
+  '/app/p/$penId': typeof AppPPenIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/login' | '/auth/register'
+  fullPaths:
+    | '/'
+    | '/auth/login'
+    | '/auth/register'
+    | '/p/$slug'
+    | '/app'
+    | '/app/p/$penId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/login' | '/auth/register'
-  id: '__root__' | '/' | '/auth/login' | '/auth/register'
+  to:
+    | '/'
+    | '/auth/login'
+    | '/auth/register'
+    | '/p/$slug'
+    | '/app'
+    | '/app/p/$penId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth/login'
+    | '/auth/register'
+    | '/p/$slug'
+    | '/app/'
+    | '/app/p/$penId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  PSlugRoute: typeof PSlugRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppPPenIdRoute: typeof AppPPenIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +115,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/register': {
@@ -82,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/p/$penId': {
+      id: '/app/p/$penId'
+      path: '/app/p/$penId'
+      fullPath: '/app/p/$penId'
+      preLoaderRoute: typeof AppPPenIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +159,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  PSlugRoute: PSlugRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppPPenIdRoute: AppPPenIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

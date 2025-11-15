@@ -20,6 +20,10 @@ const baseLinks: Array<NavLink> = [
     to: '/',
     label: 'Home',
   },
+  {
+    to: '/app',
+    label: 'Dashboard',
+  },
 ]
 
 const onboardingLinks: Array<NavLink> = [
