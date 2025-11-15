@@ -48,9 +48,19 @@ export const Route = createFileRoute('/app/p/$penId')({
   component: PenEditorShell,
 })
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Save, Settings, Share2, Clock } from 'lucide-react'
 import CodeEditor from '@/components/CodeEditor'
+
+const AUTOSAVE_DELAY_MS = 4000
+
+const logAutosave = (...args: Array<unknown>) => {
+  if (import.meta.env.DEV) {
+    console.debug('[autosave]', ...args)
+  }
+}
+
+type SaveMode = 'manual' | 'autosave'
 
 function PenEditorShell() {
   const { pen: loaderPen } = Route.useLoaderData() as { pen: PenEditorPayload }
@@ -66,8 +76,12 @@ function PenEditorShell() {
   const [lastSaveTime, setLastSaveTime] = useState<Date>(
     () => new Date(loaderPen.latestRevision.updatedAt),
   )
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'error'>('idle')
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'saving' | 'autosaving' | 'error'
+  >('idle')
   const [saveError, setSaveError] = useState<string | null>(null)
+  const autosaveTimeoutRef = useRef<number | null>(null)
+  const [autosaveSignal, setAutosaveSignal] = useState(0)
 
   useEffect(() => {
     setPen(loaderPen)
@@ -80,46 +94,116 @@ function PenEditorShell() {
     setHasUnsavedChanges(false)
     setSaveStatus('idle')
     setSaveError(null)
+    clearAutosaveTimer()
   }, [loaderPen])
 
-  const handleCodeChange = (code: { html: string; css: string; js: string }) => {
-    setCurrentCode(code)
-    setHasUnsavedChanges(true)
-    setSaveStatus('idle')
-    setSaveError(null)
-  }
-
-  const handleSave = async () => {
-    if (!hasUnsavedChanges || saveStatus === 'saving') {
-      return
+  const clearAutosaveTimer = useCallback(() => {
+    if (autosaveTimeoutRef.current) {
+      logAutosave('clearing pending autosave timer')
+      window.clearTimeout(autosaveTimeoutRef.current)
+      autosaveTimeoutRef.current = null
     }
+  }, [])
 
-    setSaveStatus('saving')
-    setSaveError(null)
-    try {
-      const updatedPen = (await savePenRevisionFn({
-        data: {
-          penId: pen.id,
-          html: currentCode.html,
-          css: currentCode.css,
-          js: currentCode.js,
-        },
-      })) as PenEditorPayload
+  const handleSave = useCallback(
+    async (mode: SaveMode = 'manual') => {
+      if (
+        !hasUnsavedChanges ||
+        saveStatus === 'saving' ||
+        saveStatus === 'autosaving'
+      ) {
+        logAutosave('skipping save', { hasUnsavedChanges, saveStatus })
+        return
+      }
 
-      setPen(updatedPen)
-      setLastSaveTime(new Date(updatedPen.latestRevision.updatedAt))
-      setHasUnsavedChanges(false)
+      clearAutosaveTimer()
+
+      logAutosave('starting save', { mode })
+
+      setSaveStatus(mode === 'autosave' ? 'autosaving' : 'saving')
+      setSaveError(null)
+      try {
+        const revisionKind = mode === 'autosave' ? 'AUTOSAVE' : 'SNAPSHOT'
+
+        const updatedPen = (await savePenRevisionFn({
+          data: {
+            penId: pen.id,
+            html: currentCode.html,
+            css: currentCode.css,
+            js: currentCode.js,
+            kind: revisionKind,
+          },
+        })) as PenEditorPayload
+
+        setPen(updatedPen)
+        setLastSaveTime(new Date(updatedPen.latestRevision.updatedAt))
+        setHasUnsavedChanges(false)
+        setSaveStatus('idle')
+        logAutosave('save success', {
+          mode,
+          latestRev: updatedPen.latestRevision.revNumber,
+        })
+      } catch (error) {
+        console.error('Failed to save pen', error)
+        setSaveStatus('error')
+        setSaveError(
+          mode === 'autosave'
+            ? 'Autosave failed. Use Save to try again.'
+            : 'Could not save changes. Please try again.',
+        )
+        logAutosave('save error', { mode, error })
+      }
+    },
+    [
+      clearAutosaveTimer,
+      currentCode.css,
+      currentCode.html,
+      currentCode.js,
+      hasUnsavedChanges,
+      pen.id,
+      savePenRevisionFn,
+      saveStatus,
+    ],
+  )
+
+  const scheduleAutosave = useCallback(() => {
+    clearAutosaveTimer()
+    logAutosave('scheduling autosave', { delay: AUTOSAVE_DELAY_MS })
+    autosaveTimeoutRef.current = window.setTimeout(() => {
+      logAutosave('autosave timer fired')
+      setAutosaveSignal((signal) => signal + 1)
+    }, AUTOSAVE_DELAY_MS)
+  }, [clearAutosaveTimer])
+
+  const handleCodeChange = useCallback(
+    (code: { html: string; css: string; js: string }) => {
+      setCurrentCode(code)
+      setHasUnsavedChanges(true)
       setSaveStatus('idle')
-    } catch (error) {
-      console.error('Failed to save pen', error)
-      setSaveStatus('error')
-      setSaveError('Could not save changes. Please try again.')
+      setSaveError(null)
+      scheduleAutosave()
+    },
+    [scheduleAutosave],
+  )
+
+  useEffect(() => {
+    return () => {
+      clearAutosaveTimer()
     }
-  }
+  }, [clearAutosaveTimer])
+
+  useEffect(() => {
+    if (autosaveSignal === 0) return
+    logAutosave('autosave signal observed', { autosaveSignal })
+    void handleSave('autosave')
+  }, [autosaveSignal, handleSave])
 
   const saveDescription = (() => {
     if (saveStatus === 'saving') {
       return 'Saving changes…'
+    }
+    if (saveStatus === 'autosaving') {
+      return 'Autosaving…'
     }
     if (saveStatus === 'error' && saveError) {
       return saveError
@@ -160,8 +244,14 @@ function PenEditorShell() {
               Share
             </button>
             <button
-              onClick={handleSave}
-              disabled={!hasUnsavedChanges || saveStatus === 'saving'}
+              onClick={() => {
+                void handleSave()
+              }}
+              disabled={
+                !hasUnsavedChanges ||
+                saveStatus === 'saving' ||
+                saveStatus === 'autosaving'
+              }
               className={`
                 px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2
                 ${hasUnsavedChanges

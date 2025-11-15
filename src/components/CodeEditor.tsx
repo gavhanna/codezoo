@@ -82,9 +82,6 @@ button:hover {
   const [layout, setLayout] = useState<'horizontal' | 'vertical'>('horizontal')
   const [leftPaneSize, setLeftPaneSize] = useState(50)
   const [activeEditor, setActiveEditor] = useState<'html' | 'css' | 'js'>('html')
-  const [htmlEditorVersion, setHtmlEditorVersion] = useState(0)
-  const [cssEditorVersion, setCssEditorVersion] = useState(0)
-  const [jsEditorVersion, setJsEditorVersion] = useState(0)
   const [previewCode, setPreviewCode] = useState({
     html: initialHtml,
     css: initialCss,
@@ -95,17 +92,14 @@ button:hover {
 
   useEffect(() => {
     setHtml(initialHtml)
-    setHtmlEditorVersion((version) => version + 1)
   }, [initialHtml])
 
   useEffect(() => {
     setCss(initialCss)
-    setCssEditorVersion((version) => version + 1)
   }, [initialCss])
 
   useEffect(() => {
     setJs(initialJs)
-    setJsEditorVersion((version) => version + 1)
   }, [initialJs])
 
   useEffect(() => {
@@ -120,35 +114,22 @@ button:hover {
     }
   }, [html, css, js, onCodeChange, debounceDelay])
 
-  const handleCodeChange = useCallback((
-    type: 'html' | 'css' | 'js',
-    value: string
-  ) => {
-    let newHtml = html
-    let newCss = css
-    let newJs = js
-
-    switch (type) {
-      case 'html':
-        setHtml(value)
-        newHtml = value
-        break
-      case 'css':
-        setCss(value)
-        newCss = value
-        break
-      case 'js':
-        setJs(value)
-        newJs = value
-        break
-    }
-
-    onCodeChange?.({
-      html: newHtml,
-      css: newCss,
-      js: newJs
-    })
-  }, [html, css, js, onCodeChange])
+  const handleCodeChange = useCallback(
+    (type: 'html' | 'css' | 'js', value: string) => {
+      switch (type) {
+        case 'html':
+          setHtml(value)
+          break
+        case 'css':
+          setCss(value)
+          break
+        case 'js':
+          setJs(value)
+          break
+      }
+    },
+    [],
+  )
 
   const toggleLayout = useCallback(() => {
     setLayout(prev => prev === 'horizontal' ? 'vertical' : 'horizontal')
@@ -227,7 +208,6 @@ button:hover {
                   value={html}
                   onChange={(value) => handleCodeChange('html', value)}
                   icon={<FileText className="w-4 h-4 text-orange-400" />}
-                  editorKey={`html-${htmlEditorVersion}`}
                 />
               </div>
             )}
@@ -239,7 +219,6 @@ button:hover {
                   value={css}
                   onChange={(value) => handleCodeChange('css', value)}
                   icon={<Code className="w-4 h-4 text-blue-400" />}
-                  editorKey={`css-${cssEditorVersion}`}
                 />
               </div>
             )}
@@ -251,7 +230,6 @@ button:hover {
                   value={js}
                   onChange={(value) => handleCodeChange('js', value)}
                   icon={<Cpu className="w-4 h-4 text-yellow-400" />}
-                  editorKey={`js-${jsEditorVersion}`}
                 />
               </div>
             )}
@@ -271,13 +249,6 @@ button:hover {
                 ) : (
                   <Cpu className="w-4 h-4 text-yellow-400" />
                 )
-              }
-              editorKey={
-                activeEditor === 'html'
-                  ? `html-${htmlEditorVersion}`
-                  : activeEditor === 'css'
-                    ? `css-${cssEditorVersion}`
-                    : `js-${jsEditorVersion}`
               }
             />
           </div>

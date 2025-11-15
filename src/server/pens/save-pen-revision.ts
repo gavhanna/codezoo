@@ -9,6 +9,7 @@ const inputSchema = z.object({
   html: z.string(),
   css: z.string(),
   js: z.string(),
+  kind: z.nativeEnum(RevisionKind).optional(),
 })
 
 export const savePenRevision = createServerFn({ method: 'POST' })
@@ -37,13 +38,15 @@ export const savePenRevision = createServerFn({ method: 'POST' })
 
     const nextRevNumber = (penRecord.revisions[0]?.revNumber ?? 0) + 1
 
+    const revisionKind = data.kind ?? RevisionKind.SNAPSHOT
+
     const [, updatedPen] = await ctx.prisma.$transaction([
       ctx.prisma.penRevision.create({
         data: {
           penId: penRecord.id,
           authorId: user.id,
           revNumber: nextRevNumber,
-          kind: RevisionKind.SNAPSHOT,
+          kind: revisionKind,
           html: data.html,
           css: data.css,
           js: data.js,
