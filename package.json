@@ -10,6 +10,7 @@
     "prisma:studio": "bunx prisma studio"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.19.0",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-devtools": "^0.7.0",
