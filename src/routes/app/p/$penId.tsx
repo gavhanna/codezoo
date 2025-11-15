@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useServerFn } from '@tanstack/react-start'
 import { requireUser } from '@/server/auth/guards'
 import { getCurrentUser } from '@/server/auth/current-user'
 import { getPenForEditor } from '@/server/pens/get-pen-for-editor'
@@ -6,6 +7,7 @@ import {
   serializePenForEditor,
   type PenEditorPayload,
 } from '@/server/pens/serialize'
+import { savePenRevision } from '@/server/pens/save-pen-revision'
 
 export const Route = createFileRoute('/app/p/$penId')({
   loader: async ({ context, params }) => {
@@ -46,58 +48,145 @@ export const Route = createFileRoute('/app/p/$penId')({
   component: PenEditorShell,
 })
 
+import { useEffect, useState } from 'react'
+import { Save, Settings, Share2, Clock } from 'lucide-react'
+import CodeEditor from '@/components/CodeEditor'
+
 function PenEditorShell() {
-  const { pen } = Route.useLoaderData() as { pen: PenEditorPayload }
+  const { pen: loaderPen } = Route.useLoaderData() as { pen: PenEditorPayload }
+  const savePenRevisionFn = useServerFn(savePenRevision)
+
+  const [pen, setPen] = useState(loaderPen)
+  const [currentCode, setCurrentCode] = useState({
+    html: loaderPen.latestRevision.html,
+    css: loaderPen.latestRevision.css,
+    js: loaderPen.latestRevision.js,
+  })
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [lastSaveTime, setLastSaveTime] = useState<Date>(
+    () => new Date(loaderPen.latestRevision.updatedAt),
+  )
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'error'>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setPen(loaderPen)
+    setCurrentCode({
+      html: loaderPen.latestRevision.html,
+      css: loaderPen.latestRevision.css,
+      js: loaderPen.latestRevision.js,
+    })
+    setLastSaveTime(new Date(loaderPen.latestRevision.updatedAt))
+    setHasUnsavedChanges(false)
+    setSaveStatus('idle')
+    setSaveError(null)
+  }, [loaderPen])
+
+  const handleCodeChange = (code: { html: string; css: string; js: string }) => {
+    setCurrentCode(code)
+    setHasUnsavedChanges(true)
+    setSaveStatus('idle')
+    setSaveError(null)
+  }
+
+  const handleSave = async () => {
+    if (!hasUnsavedChanges || saveStatus === 'saving') {
+      return
+    }
+
+    setSaveStatus('saving')
+    setSaveError(null)
+    try {
+      const updatedPen = (await savePenRevisionFn({
+        data: {
+          penId: pen.id,
+          html: currentCode.html,
+          css: currentCode.css,
+          js: currentCode.js,
+        },
+      })) as PenEditorPayload
+
+      setPen(updatedPen)
+      setLastSaveTime(new Date(updatedPen.latestRevision.updatedAt))
+      setHasUnsavedChanges(false)
+      setSaveStatus('idle')
+    } catch (error) {
+      console.error('Failed to save pen', error)
+      setSaveStatus('error')
+      setSaveError('Could not save changes. Please try again.')
+    }
+  }
+
+  const saveDescription = (() => {
+    if (saveStatus === 'saving') {
+      return 'Saving changes…'
+    }
+    if (saveStatus === 'error' && saveError) {
+      return saveError
+    }
+    if (hasUnsavedChanges) {
+      return 'Unsaved changes'
+    }
+    return `Saved ${lastSaveTime.toLocaleTimeString()}`
+  })()
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-10 space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="uppercase tracking-[0.3em] text-cyan-400 text-xs">
-            Editing pen
-          </p>
-          <h1 className="text-3xl font-bold">{pen.title || 'Untitled pen'}</h1>
-          <p className="text-gray-400 text-sm">
-            Last saved {new Date(pen.latestRevision.updatedAt).toLocaleString()}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors">
-            Settings
-          </button>
-          <button className="px-4 py-2 rounded-xl bg-cyan-500 text-black font-semibold hover:bg-cyan-400 transition-colors">
-            Share
-          </button>
+    <div className="h-screen bg-slate-950 text-white flex flex-col">
+      {/* Header */}
+      <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="uppercase tracking-[0.3em] text-cyan-400 text-xs mb-1">
+                Editing pen
+              </p>
+              <h1 className="text-2xl font-bold">{pen.title || 'Untitled pen'}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Clock className="w-3 h-3 text-gray-400" />
+                <p className="text-gray-400 text-sm">
+                  {saveDescription}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
+            </button>
+            <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges || saveStatus === 'saving'}
+              className={`
+                px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2
+                ${hasUnsavedChanges
+                  ? 'bg-cyan-500 text-black hover:bg-cyan-400'
+                  : 'bg-slate-700 text-gray-400 cursor-not-allowed'
+                }
+              `}
+            >
+              <Save className="w-4 h-4" />
+              {saveStatus === 'saving' ? 'Saving…' : 'Save'}
+            </button>
+          </div>
         </div>
       </header>
 
-      <section className="grid md:grid-cols-2 gap-6">
-        <article className="bg-slate-900 border border-white/5 rounded-2xl p-4 space-y-4">
-          <h2 className="text-lg font-semibold">HTML</h2>
-          <pre className="bg-slate-950 rounded-xl p-4 overflow-auto text-sm text-gray-200">
-            {pen.latestRevision.html}
-          </pre>
-        </article>
-        <article className="bg-slate-900 border border-white/5 rounded-2xl p-4 space-y-4">
-          <h2 className="text-lg font-semibold">CSS</h2>
-          <pre className="bg-slate-950 rounded-xl p-4 overflow-auto text-sm text-gray-200">
-            {pen.latestRevision.css}
-          </pre>
-        </article>
-        <article className="bg-slate-900 border border-white/5 rounded-2xl p-4 space-y-4 md:col-span-2">
-          <h2 className="text-lg font-semibold">JavaScript</h2>
-          <pre className="bg-slate-950 rounded-xl p-4 overflow-auto text-sm text-gray-200">
-            {pen.latestRevision.js}
-          </pre>
-        </article>
-      </section>
-
-      <section className="bg-slate-900 border border-white/5 rounded-2xl p-4">
-        <h2 className="text-lg font-semibold mb-3">Live preview</h2>
-        <div className="bg-slate-950 border border-white/5 rounded-xl h-72 flex items-center justify-center text-gray-500">
-          Preview iframe coming soon
-        </div>
-      </section>
-    </main>
+      {/* Editor */}
+      <div className="flex-1 min-h-0">
+        <CodeEditor
+          initialHtml={pen.latestRevision.html}
+          initialCss={pen.latestRevision.css}
+          initialJs={pen.latestRevision.js}
+          onCodeChange={handleCodeChange}
+          className="h-full"
+        />
+      </div>
+    </div>
   )
 }
