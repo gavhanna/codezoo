@@ -198,6 +198,20 @@ function PenEditorShell() {
     void handleSave('autosave')
   }, [autosaveSignal, handleSave])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault()
+        void handleSave()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleSave])
+
   const saveDescription = (() => {
     if (saveStatus === 'saving') {
       return 'Saving changes…'
