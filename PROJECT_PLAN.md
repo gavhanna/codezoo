@@ -26,16 +26,17 @@ Create a self-hostable, open-source playground ("CodePen clone") for HTML/CSS/JS
 - Template/gallery system and cloning from templates.
 
 ## Architecture Overview
-### Frontend
-- Vite + React + TypeScript SPA using TanStack Router for routing, TanStack Query for data fetching/cache, and Zod for shared validation.
-- Editor surface powered by Monaco (primary choice) with state mirrored to local storage for offline resilience.
-- Preview iframe receives compiled payloads through `postMessage`; uses CSP + sandbox attributes.
+### Application Stack
+- TanStack Start (React) provides a single codebase for UI + server, leveraging TanStack Router’s file-based routes, loaders, actions, and streaming SSR to keep client/server contracts in one place (per [TanStack Start docs](https://tanstack.com/start/latest/docs/framework/react/guide/execution-model)).
+- TanStack Query remains the cache/fetch layer, now wired directly into Start loaders/mutations for fully type-safe data flow.
+- Monaco stays the primary editor with local-storage mirroring for offline resilience; components live inside the Start app routes/layouts.
+- Preview iframe still receives compiled payloads via `postMessage` but is hosted by a dedicated Start route tree (`/preview/:penId/:hash`) that only runs server functions needed for sandboxing.
 
-### Backend API
-- Bun runtime + TypeScript, leveraging a lightweight framework such as Elysia/Hono for routing and middleware.
-- REST + lightweight WebSocket (Socket.IO or `ws`) endpoint reserved for future collab/live preview events.
-- Shared request/response validation via Zod schemas to keep client/server contracts aligned.
-- Authentication via argon2 password hashes, session cookies signed w/ JWT secret, optional Redis for session store when scaling.
+### Runtime & Server Functions
+- Bun is the runtime/toolchain (per [bun.sh docs](https://bun.sh/docs)) powering the Start dev server, production SSR, package management, and test runner; we use `bun install`, `bun start`, and `bun test` everywhere for consistency.
+- Start server functions (loaders, actions, server routes) encapsulate what used to be “backend API” concerns: auth flows, pen CRUD, revision snapshots, and preview orchestration. These handlers run on Bun’s HTTP server, so no separate API container is needed.
+- WebSocket-style features (presence, console streaming) can attach to Bun’s native `Bun.serve` upgrade hooks when Phase 3 arrives.
+- Shared Zod schemas enforce request/response validation across Start loaders/actions and the preview iframe messaging contract.
 
 ### Preview/Compile Worker
 - First iteration keeps compilation client-side (in-browser) to avoid server load.
@@ -66,9 +67,9 @@ Create a self-hostable, open-source playground ("CodePen clone") for HTML/CSS/JS
 - Rate limiting on preview/compile endpoints; size/time guards when executing user JS in iframe.
 
 ## Deployment & Self-Hosting
-- Single `docker-compose.yml` running: web (static assets), API, Postgres, optional Redis, reverse proxy (Caddy/Traefik) handling TLS.
-- `.env.example` enumerates secrets (DB URL, JWT secret, SMTP, S3 buckets) with sane defaults.
-- Health checks + readiness probes for each service; log aggregation via stdout + optional Loki/ELK instructions.
+- Single `docker-compose.yml` now runs the Bun-powered TanStack Start app (serving SSR + API + preview routes), Postgres, optional Redis, and a reverse proxy (Caddy/Traefik) for TLS + CSP headers.
+- `.env.example` enumerates secrets (DB URL, SESSION_SECRET/JWT, SMTP, S3 buckets) plus Start/Bun toggles (`BUN_ENV`, preview retention limits, feature flags) with sane defaults.
+- Health checks expose the Start `/healthz` route and database readiness; logs aggregate via stdout with optional Loki/ELK instructions.
 
 ## Operational Considerations
 - Backups: daily DB dumps + optional S3 sync script documented.
@@ -99,8 +100,8 @@ Create a self-hostable, open-source playground ("CodePen clone") for HTML/CSS/JS
 - **Decision:** All pen actions require login; anonymous pens can be revisited once auth + abuse controls mature.
 
 ## Next Actions
-1. Draft detailed schema for users/pens/revisions (ERD + migration plan).
-2. Prototype iframe preview + CSP locally to confirm sandbox strategy.
-3. Choose editor component and spike integration inside Vite.
-4. Write `docker-compose.yml` skeleton to validate self-host install story.
+1. Scaffold the Bun-powered TanStack Start project (`npm create @tanstack/start@latest` or `bun create`) and capture the initial repo structure.
+2. Integrate Prisma (schema, migrations, env wiring) into Start server functions for auth + pen CRUD.
+3. Prototype the iframe preview route + CSP locally inside Start to confirm the sandbox + `postMessage` flow.
+4. Write the unified `docker-compose.yml` (Start app, Postgres, optional Redis, reverse proxy) to validate the self-host story.
 5. Document the preview sandbox message protocol (event types, payload sizes, CSP expectations) so host/iframe implementations stay in sync.
