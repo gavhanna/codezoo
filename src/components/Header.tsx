@@ -1,12 +1,28 @@
-import { Link } from '@tanstack/react-router'
-import { LogIn, Menu, UserPlus, X } from 'lucide-react'
+import { Link, useRouter } from '@tanstack/react-router'
+import { useServerFn } from '@tanstack/react-start'
+import { LogIn, LogOut, Menu, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
+import { logoutUser } from '@/server/auth/logout'
+import type { CurrentUserPayload } from '@/server/auth/current-user'
 
-const navLinks = [
+type HeaderProps = {
+  currentUser: CurrentUserPayload
+}
+
+type NavLink = {
+  to: string
+  label: string
+  icon?: React.ReactNode
+}
+
+const baseLinks: Array<NavLink> = [
   {
     to: '/',
     label: 'Home',
   },
+]
+
+const onboardingLinks: Array<NavLink> = [
   {
     to: '/auth/register',
     label: 'Create account',
@@ -19,8 +35,19 @@ const navLinks = [
   },
 ]
 
-export default function Header() {
+export default function Header({ currentUser }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const logout = useServerFn(logoutUser)
+  const router = useRouter()
+
+  async function handleLogout() {
+    try {
+      await logout()
+      await router.invalidate()
+    } catch (error) {
+      console.error('Failed to log out', error)
+    }
+  }
 
   return (
     <>
@@ -41,20 +68,38 @@ export default function Header() {
           <span>Codezoo</span>
         </Link>
         <div className="hidden md:flex items-center gap-3">
-          {navLinks.slice(1).map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 transition-colors flex items-center gap-2"
-              activeProps={{
-                className:
-                  'px-4 py-2 rounded-lg bg-cyan-400 text-black transition-colors flex items-center gap-2',
-              }}
-            >
-              {link.icon}
-              <span>{link.label}</span>
-            </Link>
-          ))}
+          {!currentUser &&
+            onboardingLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 transition-colors flex items-center gap-2"
+                activeProps={{
+                  className:
+                    'px-4 py-2 rounded-lg bg-cyan-400 text-black transition-colors flex items-center gap-2',
+                }}
+              >
+                {link.icon}
+                <span>{link.label}</span>
+              </Link>
+            ))}
+          {currentUser && (
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-sm text-gray-300">Signed in as</p>
+                <p className="font-semibold">
+                  {currentUser.displayName || currentUser.email}
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2"
+              >
+                <LogOut size={18} />
+                <span>Sign out</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -75,7 +120,7 @@ export default function Header() {
         </div>
 
         <nav className="flex-1 p-4 flex flex-col gap-2">
-          {navLinks.map((link) => (
+          {[...baseLinks, ...(currentUser ? [] : onboardingLinks)].map((link) => (
             <Link
               key={link.to}
               to={link.to}
@@ -90,6 +135,18 @@ export default function Header() {
               <span className="font-medium">{link.label}</span>
             </Link>
           ))}
+          {currentUser && (
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                handleLogout()
+              }}
+              className="flex items-center gap-3 p-3 rounded-lg bg-slate-900 hover:bg-slate-800 transition-colors text-left"
+            >
+              <LogOut size={18} />
+              <span className="font-medium">Sign out</span>
+            </button>
+          )}
         </nav>
       </aside>
     </>

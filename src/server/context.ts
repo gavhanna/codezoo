@@ -52,3 +52,11 @@ export async function buildServerContext(
 
   return context
 }
+
+export function requireContext(context?: AppServerContext) {
+  if (!context) {
+    throw new Error('Server context is unavailable.')
+  }
+
+  return context
+}

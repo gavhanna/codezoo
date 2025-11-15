@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { z } from 'zod'
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
 import { normalizeEmail, verifyPassword } from '@/server/auth/password'
 import { createSession } from '@/server/auth/session'
+import { requireContext } from '@/server/context'
 
 const loginSchema = z.object({
   email: z
@@ -27,7 +28,7 @@ type LoginResult =
 const loginUser = createServerFn({ method: 'POST' })
   .inputValidator((input: LoginInput) => loginSchema.parse(input))
   .handler(async ({ data, context }): Promise<Response | LoginResult> => {
-    const ctx = ensureContext(context)
+    const ctx = requireContext(context)
     const email = normalizeEmail(data.email)
     const user = await ctx.prisma.user.findUnique({
       where: { email },
@@ -72,15 +73,9 @@ export const Route = createFileRoute('/auth/login')({
   component: LoginPage,
 })
 
-function ensureContext<T>(value: T | undefined): T {
-  if (!value) {
-    throw new Error('Server context is unavailable.')
-  }
-  return value
-}
-
 function LoginPage() {
   const action = useServerFn(loginUser)
+  const router = useRouter()
   const [formValues, setFormValues] = useState<LoginInput>({
     email: '',
     password: '',
@@ -102,7 +97,10 @@ function LoginPage() {
       if (result && 'success' in result && result.success === false) {
         setFieldErrors(result.fieldErrors ?? {})
         setFormError(result.formError ?? null)
+        return
       }
+
+      await router.navigate({ to: '/' })
     } catch (err) {
       setFormError('Something went wrong. Please try again.')
       console.error(err)

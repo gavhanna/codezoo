@@ -3,10 +3,28 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import Header from '../components/Header'
-
+import {
+  getCurrentUser,
+  serializeCurrentUser,
+  type CurrentUserPayload,
+} from '@/server/auth/current-user'
+import type { AppServerContext } from '@/server/context'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
+  loader: async ({ context }) => {
+    if (context && 'prisma' in context) {
+      const ctx = context as AppServerContext
+
+      return {
+        currentUser: serializeCurrentUser(ctx.currentUser),
+      }
+    }
+
+    return {
+      currentUser: (await getCurrentUser()) as CurrentUserPayload,
+    }
+  },
   head: () => ({
     meta: [
       {
@@ -32,13 +50,15 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const { currentUser } = Route.useLoaderData()
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
-        <Header />
+        <Header currentUser={currentUser} />
         {children}
         <TanStackDevtools
           config={{
