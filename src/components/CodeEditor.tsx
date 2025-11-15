@@ -263,6 +263,8 @@ button:hover {
         left={editorPanel}
         right={<PreviewPane html={previewCode.html} css={previewCode.css} js={previewCode.js} />}
         defaultLeftSize={leftPaneSize}
+        leftSize={leftPaneSize}
+        onResize={setLeftPaneSize}
         split={layout}
       />
     </div>
