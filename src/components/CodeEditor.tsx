@@ -85,6 +85,13 @@ button:hover {
   const [htmlEditorVersion, setHtmlEditorVersion] = useState(0)
   const [cssEditorVersion, setCssEditorVersion] = useState(0)
   const [jsEditorVersion, setJsEditorVersion] = useState(0)
+  const [previewCode, setPreviewCode] = useState({
+    html: initialHtml,
+    css: initialCss,
+    js: initialJs,
+  })
+
+  const debounceDelay = 350
 
   useEffect(() => {
     setHtml(initialHtml)
@@ -100,6 +107,18 @@ button:hover {
     setJs(initialJs)
     setJsEditorVersion((version) => version + 1)
   }, [initialJs])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const nextCode = { html, css, js }
+      setPreviewCode(nextCode)
+      onCodeChange?.(nextCode)
+    }, debounceDelay)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [html, css, js, onCodeChange, debounceDelay])
 
   const handleCodeChange = useCallback((
     type: 'html' | 'css' | 'js',
@@ -271,7 +290,7 @@ button:hover {
     <div className={`h-full w-full overflow-hidden ${className}`}>
       <SplitPane
         left={editorPanel}
-        right={<PreviewPane html={html} css={css} js={js} />}
+        right={<PreviewPane html={previewCode.html} css={previewCode.css} js={previewCode.js} />}
         defaultLeftSize={leftPaneSize}
         split={layout}
       />
