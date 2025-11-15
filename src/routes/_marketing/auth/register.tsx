@@ -2,58 +2,66 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
-import { normalizeEmail, verifyPassword } from '@/server/auth/password'
+import { hashPassword, normalizeEmail } from '@/server/auth/password'
 import { createSession } from '@/server/auth/session'
 import { requireContext } from '@/server/context'
+import type { AppServerContext } from '@/server/context'
+import { getCurrentUser } from '@/server/auth/current-user'
+import { MarketingShell } from '@/components/MarketingShell'
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, 'Display name must contain at least 2 characters.')
+    .max(80, 'Display name is too long.'),
   email: z
     .string()
     .trim()
     .email('Enter a valid email address.')
     .max(190, 'Email is too long.'),
-  password: z.string().min(1, 'Password is required.'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters long.')
+    .max(72, 'Password is too long.'),
 })
 
-type LoginInput = z.infer<typeof loginSchema>
+type RegisterInput = z.infer<typeof registerSchema>
 
-type LoginResult =
+type RegisterResult =
   | {
       success: false
       formError?: string
-      fieldErrors?: Partial<Record<keyof LoginInput, string>>
+      fieldErrors?: Partial<Record<keyof RegisterInput, string>>
     }
   | { success: true }
 
-const loginUser = createServerFn({ method: 'POST' })
-  .inputValidator((input: LoginInput) => loginSchema.parse(input))
-  .handler(async ({ data, context }): Promise<Response | LoginResult> => {
+const registerUser = createServerFn({ method: 'POST' })
+  .inputValidator((input: RegisterInput) => registerSchema.parse(input))
+  .handler(async ({ data, context }): Promise<Response | RegisterResult> => {
     const ctx = requireContext(context)
     const email = normalizeEmail(data.email)
-    const user = await ctx.prisma.user.findUnique({
+    const existing = await ctx.prisma.user.findUnique({
       where: { email },
     })
 
-    if (!user) {
-      return {
-        success: false,
-        fieldErrors: { email: 'We could not find an account with that email.' },
-      }
-    }
-
-    const passwordIsValid = await verifyPassword(
-      data.password,
-      user.passwordHash,
-    )
-
-    if (!passwordIsValid) {
+    if (existing) {
       return {
         success: false,
         fieldErrors: {
-          password: 'Incorrect password. Please try again.',
+          email: 'An account already exists for this email.',
         },
       }
     }
+
+    const passwordHash = await hashPassword(data.password)
+    const user = await ctx.prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        displayName: data.displayName,
+      },
+    })
 
     const { cookie } = await createSession({
       prisma: ctx.prisma,
@@ -69,19 +77,37 @@ const loginUser = createServerFn({ method: 'POST' })
     })
   })
 
-export const Route = createFileRoute('/auth/login')({
-  component: LoginPage,
+async function ensureLoggedOut(context?: AppServerContext | null) {
+  if (context?.currentUser) {
+    throw redirect({ to: '/app' })
+  }
+
+  if (!context) {
+    const currentUser = await getCurrentUser()
+    if (currentUser) {
+      throw redirect({ to: '/app' })
+    }
+  }
+}
+
+export const Route = createFileRoute('/_marketing/auth/register')({
+  loader: async ({ context }) => {
+    await ensureLoggedOut(context as AppServerContext | undefined)
+    return null
+  },
+  component: RegisterPage,
 })
 
-function LoginPage() {
-  const action = useServerFn(loginUser)
+function RegisterPage() {
+  const action = useServerFn(registerUser)
   const router = useRouter()
-  const [formValues, setFormValues] = useState<LoginInput>({
+  const [formValues, setFormValues] = useState<RegisterInput>({
+    displayName: '',
     email: '',
     password: '',
   })
   const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof LoginInput, string>>
+    Partial<Record<keyof RegisterInput, string>>
   >({})
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -110,19 +136,33 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-8 space-y-6 text-white shadow-2xl">
+    <MarketingShell>
+      <div className="flex-1 bg-slate-950 flex items-center justify-center px-6 py-16">
+        <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-8 space-y-6 text-white shadow-2xl">
         <div className="space-y-2 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-400">
-            Welcome back
+            Create account
           </p>
-          <h1 className="text-3xl font-bold">Sign in to Codezoo</h1>
+          <h1 className="text-3xl font-bold">Join Codezoo</h1>
           <p className="text-gray-400">
-            Access your pens, manage revisions, and continue where you left off.
+            Save pens, sync revisions, and get secure session cookies for every
+            device.
           </p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <FormField
+            label="Display name"
+            name="displayName"
+            value={formValues.displayName}
+            onChange={(value) =>
+              setFormValues((prev) => ({ ...prev, displayName: value }))
+            }
+            error={fieldErrors.displayName}
+            autoComplete="nickname"
+            placeholder="Ada Lovelace"
+          />
+
           <FormField
             label="Email"
             name="email"
@@ -145,8 +185,8 @@ function LoginPage() {
               setFormValues((prev) => ({ ...prev, password: value }))
             }
             error={fieldErrors.password}
-            autoComplete="current-password"
-            placeholder="●●●●●●●●"
+            autoComplete="new-password"
+            placeholder="Minimum 8 characters"
           />
 
           {formError && (
@@ -160,21 +200,22 @@ function LoginPage() {
             disabled={submitting}
             className="w-full py-3 rounded-2xl bg-cyan-500 text-black font-semibold hover:bg-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
-            {submitting ? 'Signing in...' : 'Sign in'}
+            {submitting ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-400">
-          Need an account?{' '}
+          Already have an account?{' '}
           <Link
-            to="/auth/register"
+            to="/auth/login"
             className="text-cyan-400 hover:text-cyan-300 underline-offset-4 underline"
           >
-            Create one
+            Sign in
           </Link>
         </p>
+        </div>
       </div>
-    </div>
+    </MarketingShell>
   )
 }
 

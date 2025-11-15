@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { NotebookPen, ShieldCheck, Sparkles, Zap } from 'lucide-react'
+import { MarketingShell } from '@/components/MarketingShell'
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/_marketing/')({
   component: Landing,
 })
 
@@ -34,8 +35,8 @@ const highlights = [
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      <section className="px-6 py-16 md:py-24">
+    <MarketingShell>
+      <section className="px-6 py-16 md:py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
         <div className="max-w-5xl mx-auto text-center space-y-8">
           <p className="uppercase tracking-[0.4em] text-cyan-400 text-sm">
             Build, preview, share
@@ -65,7 +66,7 @@ function Landing() {
           </div>
         </div>
       </section>
-      <section className="px-6 pb-16">
+      <section className="px-6 pb-16 bg-slate-950 text-white">
         <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-2">
           {highlights.map((item) => (
             <div
@@ -79,6 +80,6 @@ function Landing() {
           ))}
         </div>
       </section>
-    </div>
+    </MarketingShell>
   )
 }

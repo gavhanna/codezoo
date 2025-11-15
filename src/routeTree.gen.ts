@@ -9,36 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
-import { Route as PSlugRouteImport } from './routes/p/$slug'
-import { Route as AuthRegisterRouteImport } from './routes/auth/register'
-import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as AppPPenIdRouteImport } from './routes/app/p/$penId'
+import { Route as MarketingPSlugRouteImport } from './routes/_marketing/p/$slug'
+import { Route as MarketingAuthRegisterRouteImport } from './routes/_marketing/auth/register'
+import { Route as MarketingAuthLoginRouteImport } from './routes/_marketing/auth/login'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PSlugRoute = PSlugRouteImport.update({
-  id: '/p/$slug',
-  path: '/p/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRegisterRoute = AuthRegisterRouteImport.update({
-  id: '/auth/register',
-  path: '/auth/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/auth/login',
-  path: '/auth/login',
+const MarketingIndexRoute = MarketingIndexRouteImport.update({
+  id: '/_marketing/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppPPenIdRoute = AppPPenIdRouteImport.update({
@@ -46,77 +31,85 @@ const AppPPenIdRoute = AppPPenIdRouteImport.update({
   path: '/app/p/$penId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarketingPSlugRoute = MarketingPSlugRouteImport.update({
+  id: '/_marketing/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingAuthRegisterRoute = MarketingAuthRegisterRouteImport.update({
+  id: '/_marketing/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingAuthLoginRoute = MarketingAuthLoginRouteImport.update({
+  id: '/_marketing/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/auth/login': typeof AuthLoginRoute
-  '/auth/register': typeof AuthRegisterRoute
-  '/p/$slug': typeof PSlugRoute
+  '/': typeof MarketingIndexRoute
   '/app': typeof AppIndexRoute
+  '/auth/login': typeof MarketingAuthLoginRoute
+  '/auth/register': typeof MarketingAuthRegisterRoute
+  '/p/$slug': typeof MarketingPSlugRoute
   '/app/p/$penId': typeof AppPPenIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/auth/login': typeof AuthLoginRoute
-  '/auth/register': typeof AuthRegisterRoute
-  '/p/$slug': typeof PSlugRoute
+  '/': typeof MarketingIndexRoute
   '/app': typeof AppIndexRoute
+  '/auth/login': typeof MarketingAuthLoginRoute
+  '/auth/register': typeof MarketingAuthRegisterRoute
+  '/p/$slug': typeof MarketingPSlugRoute
   '/app/p/$penId': typeof AppPPenIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/auth/login': typeof AuthLoginRoute
-  '/auth/register': typeof AuthRegisterRoute
-  '/p/$slug': typeof PSlugRoute
+  '/_marketing/': typeof MarketingIndexRoute
   '/app/': typeof AppIndexRoute
+  '/_marketing/auth/login': typeof MarketingAuthLoginRoute
+  '/_marketing/auth/register': typeof MarketingAuthRegisterRoute
+  '/_marketing/p/$slug': typeof MarketingPSlugRoute
   '/app/p/$penId': typeof AppPPenIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/auth/login'
     | '/auth/register'
     | '/p/$slug'
-    | '/app'
     | '/app/p/$penId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
     | '/auth/login'
     | '/auth/register'
     | '/p/$slug'
-    | '/app'
     | '/app/p/$penId'
   id:
     | '__root__'
-    | '/'
-    | '/auth/login'
-    | '/auth/register'
-    | '/p/$slug'
+    | '/_marketing/'
     | '/app/'
+    | '/_marketing/auth/login'
+    | '/_marketing/auth/register'
+    | '/_marketing/p/$slug'
     | '/app/p/$penId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthLoginRoute: typeof AuthLoginRoute
-  AuthRegisterRoute: typeof AuthRegisterRoute
-  PSlugRoute: typeof PSlugRoute
+  MarketingIndexRoute: typeof MarketingIndexRoute
   AppIndexRoute: typeof AppIndexRoute
+  MarketingAuthLoginRoute: typeof MarketingAuthLoginRoute
+  MarketingAuthRegisterRoute: typeof MarketingAuthRegisterRoute
+  MarketingPSlugRoute: typeof MarketingPSlugRoute
   AppPPenIdRoute: typeof AppPPenIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/': {
       id: '/app/'
       path: '/app'
@@ -124,25 +117,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/p/$slug': {
-      id: '/p/$slug'
-      path: '/p/$slug'
-      fullPath: '/p/$slug'
-      preLoaderRoute: typeof PSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/register': {
-      id: '/auth/register'
-      path: '/auth/register'
-      fullPath: '/auth/register'
-      preLoaderRoute: typeof AuthRegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/login': {
-      id: '/auth/login'
-      path: '/auth/login'
-      fullPath: '/auth/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
+    '/_marketing/': {
+      id: '/_marketing/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof MarketingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/p/$penId': {
@@ -152,15 +131,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPPenIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_marketing/p/$slug': {
+      id: '/_marketing/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof MarketingPSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_marketing/auth/register': {
+      id: '/_marketing/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof MarketingAuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_marketing/auth/login': {
+      id: '/_marketing/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof MarketingAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AuthLoginRoute: AuthLoginRoute,
-  AuthRegisterRoute: AuthRegisterRoute,
-  PSlugRoute: PSlugRoute,
+  MarketingIndexRoute: MarketingIndexRoute,
   AppIndexRoute: AppIndexRoute,
+  MarketingAuthLoginRoute: MarketingAuthLoginRoute,
+  MarketingAuthRegisterRoute: MarketingAuthRegisterRoute,
+  MarketingPSlugRoute: MarketingPSlugRoute,
   AppPPenIdRoute: AppPPenIdRoute,
 }
 export const routeTree = rootRouteImport
