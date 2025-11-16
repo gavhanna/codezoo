@@ -107,7 +107,7 @@ button:hover {
   const [css, setCss] = useState(initialCss)
   const [js, setJs] = useState(initialJs)
   const [layout, setLayout] = useState<'horizontal' | 'vertical'>('horizontal')
-  const [leftPaneSize, setLeftPaneSize] = useState(50)
+  const [leftPaneSize, setLeftPaneSize] = useState(33)
   const [previewCode, setPreviewCode] = useState({
     html: initialHtml,
     css: initialCss,
