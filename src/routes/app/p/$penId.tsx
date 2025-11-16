@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { requireUser } from '@/server/auth/guards'
 import { getCurrentUser } from '@/server/auth/current-user'
@@ -49,8 +49,10 @@ export const Route = createFileRoute('/app/p/$penId')({
 })
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Save, Settings, Share2, Clock } from 'lucide-react'
+import { ArrowLeft, Clock, Save, Settings, Share2 } from 'lucide-react'
 import CodeEditor from '@/components/CodeEditor'
+import { LayoutToggle } from '@/components/SplitPane'
+import { EditorLayout } from '@/components/EditorLayout'
 
 const AUTOSAVE_DELAY_MS = 4000
 
@@ -82,6 +84,7 @@ function PenEditorShell() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const autosaveTimeoutRef = useRef<number | null>(null)
   const [autosaveSignal, setAutosaveSignal] = useState(0)
+  const [editorLayout, setEditorLayout] = useState<'horizontal' | 'vertical'>('horizontal')
 
   useEffect(() => {
     setPen(loaderPen)
@@ -175,6 +178,10 @@ function PenEditorShell() {
     }, AUTOSAVE_DELAY_MS)
   }, [clearAutosaveTimer])
 
+  const handleToggleLayout = useCallback(() => {
+    setEditorLayout(prev => (prev === 'horizontal' ? 'vertical' : 'horizontal'))
+  }, [])
+
   const handleCodeChange = useCallback(
     (code: { html: string; css: string; js: string }) => {
       setCurrentCode(code)
@@ -229,68 +236,75 @@ function PenEditorShell() {
   })()
 
   return (
-    <div className="h-screen bg-slate-950 text-white flex flex-col">
-      {/* Header */}
-      <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex-shrink-0">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div>
-              <p className="uppercase tracking-[0.3em] text-cyan-400 text-xs mb-1">
-                Editing pen
-              </p>
-              <h1 className="text-2xl font-bold">{pen.title || 'Untitled pen'}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Clock className="w-3 h-3 text-gray-400" />
-                <p className="text-gray-400 text-sm">
-                  {saveDescription}
+    <EditorLayout>
+      <div className="flex-1 flex flex-col bg-slate-950 text-white">
+        <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex-shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+              <Link
+                to="/app"
+                className="inline-flex items-center gap-2 text-sm text-gray-200 hover:text-white px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to dashboard
+              </Link>
+              <div>
+                <p className="uppercase tracking-[0.3em] text-cyan-400 text-xs mb-1">
+                  Editing pen
                 </p>
+                <h1 className="text-2xl font-bold">{pen.title || 'Untitled pen'}</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Clock className="w-3 h-3 text-gray-400" />
+                  <p className="text-gray-400 text-sm">{saveDescription}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
-            </button>
-            <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
-              Share
-            </button>
-            <button
-              onClick={() => {
-                void handleSave()
-              }}
-              disabled={
-                !hasUnsavedChanges ||
-                saveStatus === 'saving' ||
-                saveStatus === 'autosaving'
-              }
-              className={`
-                px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2
-                ${hasUnsavedChanges
-                  ? 'bg-cyan-500 text-black hover:bg-cyan-400'
-                  : 'bg-slate-700 text-gray-400 cursor-not-allowed'
+            <div className="flex items-center gap-3">
+              <LayoutToggle layout={editorLayout} onToggle={handleToggleLayout} />
+              <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+              <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
+              <button
+                onClick={() => {
+                  void handleSave()
+                }}
+                disabled={
+                  !hasUnsavedChanges ||
+                  saveStatus === 'saving' ||
+                  saveStatus === 'autosaving'
                 }
-              `}
-            >
-              <Save className="w-4 h-4" />
-              {saveStatus === 'saving' ? 'Saving…' : 'Save'}
-            </button>
+                className={`
+                  px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2
+                  ${hasUnsavedChanges
+                    ? 'bg-cyan-500 text-black hover:bg-cyan-400'
+                    : 'bg-slate-700 text-gray-400 cursor-not-allowed'
+                  }
+                `}
+              >
+                <Save className="w-4 h-4" />
+                {saveStatus === 'saving' ? 'Saving…' : 'Save'}
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Editor */}
-      <div className="flex-1 min-h-0">
-        <CodeEditor
-          initialHtml={pen.latestRevision.html}
-          initialCss={pen.latestRevision.css}
-          initialJs={pen.latestRevision.js}
-          onCodeChange={handleCodeChange}
-          className="h-full"
-        />
+        <div className="flex-1 min-h-0">
+          <CodeEditor
+            initialHtml={pen.latestRevision.html}
+            initialCss={pen.latestRevision.css}
+            initialJs={pen.latestRevision.js}
+            onCodeChange={handleCodeChange}
+            layout={editorLayout}
+            className="h-full"
+          />
+        </div>
       </div>
-    </div>
+    </EditorLayout>
   )
 }

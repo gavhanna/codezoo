@@ -4,7 +4,6 @@ import {
   SplitPane,
   CodeEditorPane,
   PreviewPane,
-  LayoutToggle,
 } from './SplitPane'
 
 const EDITOR_PANES = [
@@ -101,12 +100,12 @@ button:hover {
   }, 200);
 });`,
   onCodeChange,
-  className = ''
+  className = '',
+  layout = 'horizontal'
 }) => {
   const [html, setHtml] = useState(initialHtml)
   const [css, setCss] = useState(initialCss)
   const [js, setJs] = useState(initialJs)
-  const [layout, setLayout] = useState<'horizontal' | 'vertical'>('horizontal')
   const [leftPaneSize, setLeftPaneSize] = useState(33)
   const [previewCode, setPreviewCode] = useState({
     html: initialHtml,
@@ -365,10 +364,6 @@ button:hover {
     [],
   )
 
-  const toggleLayout = useCallback(() => {
-    setLayout(prev => prev === 'horizontal' ? 'vertical' : 'horizontal')
-  }, [])
-
   const toggleLeftRight = useCallback(() => {
     setLeftPaneSize(prev => {
       // Swap left and right pane sizes
@@ -378,42 +373,7 @@ button:hover {
 
   const editorPanel = (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      <div className="bg-slate-800 px-4 py-3 border-b border-white/5 flex-shrink-0">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <LayoutToggle layout={layout} onToggle={toggleLayout} />
-            <button
-              onClick={toggleLeftRight}
-              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
-              title="Swap editor and preview panels"
-            >
-              <Layout className="w-4 h-4 text-gray-300 rotate-90" />
-            </button>
-          </div>
-          <p className="text-xs text-gray-400">
-            Drag the dividers to resize panes. Collapse the ones you don&apos;t need.
-          </p>
-        </div>
-
-        {collapsedList.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
-            <span className="uppercase tracking-[0.3em] text-[0.65rem] text-gray-500">
-              Collapsed
-            </span>
-            {collapsedList.map((pane) => (
-              <button
-                key={pane.id}
-                onClick={() => expandPane(pane.id)}
-                className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center gap-1 text-xs font-medium"
-              >
-                <PlusSquare className="w-3 h-3 text-cyan-400" />
-                {pane.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
+      
       <div className="flex-1 min-h-0 overflow-hidden">
         <div
           ref={editorStackRef}
