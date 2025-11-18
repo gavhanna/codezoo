@@ -103,9 +103,9 @@ button:hover {
   className = '',
   layout = 'horizontal'
 }) => {
-  const [html, setHtml] = useState(initialHtml)
-  const [css, setCss] = useState(initialCss)
-  const [js, setJs] = useState(initialJs)
+  const htmlRef = useRef(initialHtml)
+  const cssRef = useRef(initialCss)
+  const jsRef = useRef(initialJs)
   const [leftPaneSize, setLeftPaneSize] = useState(33)
   const [previewCode, setPreviewCode] = useState({
     html: initialHtml,
@@ -122,6 +122,12 @@ button:hover {
     css: 33,
     js: 33,
   })
+  const [editorKeys, setEditorKeys] = useState<Record<PaneId, number>>({
+    html: 0,
+    css: 0,
+    js: 0,
+  })
+  const previewTimeoutRef = useRef<number | null>(null)
   const editorStackRef = useRef<HTMLDivElement>(null)
   const [draggingDivider, setDraggingDivider] = useState<number | null>(null)
   const resizeStateRef = useRef<{
@@ -324,44 +330,65 @@ button:hover {
   const debounceDelay = 350
 
   useEffect(() => {
-    setHtml(initialHtml)
-  }, [initialHtml])
+    htmlRef.current = initialHtml
+    cssRef.current = initialCss
+    jsRef.current = initialJs
+    setPreviewCode({
+      html: initialHtml,
+      css: initialCss,
+      js: initialJs,
+    })
+    setEditorKeys((prev) => ({
+      html: prev.html + 1,
+      css: prev.css + 1,
+      js: prev.js + 1,
+    }))
+  }, [initialHtml, initialCss, initialJs])
 
   useEffect(() => {
-    setCss(initialCss)
-  }, [initialCss])
-
-  useEffect(() => {
-    setJs(initialJs)
-  }, [initialJs])
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const nextCode = { html, css, js }
-      setPreviewCode(nextCode)
-      onCodeChange?.(nextCode)
-    }, debounceDelay)
-
     return () => {
-      window.clearTimeout(timeout)
+      if (previewTimeoutRef.current) {
+        window.clearTimeout(previewTimeoutRef.current)
+      }
     }
-  }, [html, css, js, onCodeChange, debounceDelay])
+  }, [])
+
+  const schedulePreviewUpdate = useCallback(() => {
+    if (previewTimeoutRef.current) {
+      window.clearTimeout(previewTimeoutRef.current)
+    }
+
+    previewTimeoutRef.current = window.setTimeout(() => {
+      setPreviewCode({
+        html: htmlRef.current,
+        css: cssRef.current,
+        js: jsRef.current,
+      })
+    }, debounceDelay)
+  }, [debounceDelay])
 
   const handleCodeChange = useCallback(
     (type: PaneId, value: string) => {
       switch (type) {
         case 'html':
-          setHtml(value)
+          htmlRef.current = value
           break
         case 'css':
-          setCss(value)
+          cssRef.current = value
           break
         case 'js':
-          setJs(value)
+          jsRef.current = value
           break
       }
+
+      schedulePreviewUpdate()
+      onCodeChange?.({
+        html: htmlRef.current,
+        css: cssRef.current,
+        js: jsRef.current,
+      })
     },
-    [],
+    [onCodeChange, schedulePreviewUpdate],
   )
 
   const toggleLeftRight = useCallback(() => {
@@ -383,8 +410,6 @@ button:hover {
         >
           {visiblePanes.map((pane, index) => {
             const Icon = pane.icon
-            const paneValue =
-              pane.id === 'html' ? html : pane.id === 'css' ? css : js
             const paneStyle =
               editorStackDirection === 'vertical'
                 ? {
@@ -405,8 +430,15 @@ button:hover {
                   <CodeEditorPane
                     title={pane.label}
                     language={pane.language}
-                    value={paneValue}
+                    initialValue={
+                      pane.id === 'html'
+                        ? htmlRef.current
+                        : pane.id === 'css'
+                        ? cssRef.current
+                        : jsRef.current
+                    }
                     onChange={(value) => handleCodeChange(pane.id, value)}
+                    editorKey={editorKeys[pane.id]}
                     icon={<Icon className={`w-4 h-4 ${pane.accent}`} />}
                     onCollapse={() => handleToggleCollapse(pane.id)}
                     collapseDisabled={visiblePanes.length === 1}
