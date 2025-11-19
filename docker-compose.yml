@@ -1,0 +1,29 @@
+services:
+  app:
+    image: ghcr.io/gavhanna/codezoo:latest
+    # For local development, build with: docker build -t ghcr.io/gavhanna/codezoo:latest .
+    # This allows testing the same image name before pushing to GHCR
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/codezoo?schema=public
+      - SESSION_SECRET=dev-secret-change-me
+      - JWT_SECRET=dev-secret-change-me
+      - NODE_ENV=production
+      # Add other env vars from .env.example as needed
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=codezoo
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  db_data:

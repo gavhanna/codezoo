@@ -2,16 +2,15 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import {
-  getCurrentUser,
-  serializeCurrentUser,
-  type CurrentUserPayload,
-} from '@/server/auth/current-user'
+import type { CurrentUserPayload } from '@/server/auth/current-user'
 import type { AppServerContext } from '@/server/context'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
   loader: async ({ context }) => {
+    // Dynamic imports to prevent client bundle inclusion
+    const { getCurrentUser, serializeCurrentUser } = await import('@/server/auth/current-user')
+    
     if (context && 'prisma' in context) {
       const ctx = context as AppServerContext
 

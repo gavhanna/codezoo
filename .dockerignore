@@ -1,0 +1,10 @@
+node_modules
+.git
+.env
+.bun
+.bun_tmp
+.output
+.tanstack
+dist
+coverage
+.DS_Store

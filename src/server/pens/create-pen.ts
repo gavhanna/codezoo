@@ -8,7 +8,7 @@ const DEFAULT_JS = '// Write JavaScript here'
 
 export const createPen = createServerFn({ method: 'POST' }).handler(
   async ({ context }) => {
-    const { ctx, user } = requireUser(context)
+    const { ctx, user } = await requireUser(context)
 
     const pen = await ctx.prisma.pen.create({
       data: {

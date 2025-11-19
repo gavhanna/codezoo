@@ -1,9 +1,6 @@
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useState } from 'react'
-import { requireUser } from '@/server/auth/guards'
-import { createPen } from '@/server/pens/create-pen'
-import { getUserPens } from '@/server/pens/get-user-pens'
 import { AppShell } from '@/components/AppShell'
 
 type LoaderPen = {
@@ -30,8 +27,12 @@ const serializePenRecord = (pen: {
 
 export const Route = createFileRoute('/app/')({
   loader: async ({ context }) => {
+    // Dynamic imports to prevent client bundle inclusion
+    const { requireUser } = await import('@/server/auth/guards')
+    const { getUserPens } = await import('@/server/pens/get-user-pens')
+    
     if (context && 'prisma' in context) {
-      const { ctx, user } = requireUser(context)
+      const { ctx, user } = await requireUser(context)
       const pens = await ctx.prisma.pen.findMany({
         where: { ownerId: user.id },
         orderBy: { updatedAt: 'desc' },
@@ -58,7 +59,11 @@ export const Route = createFileRoute('/app/')({
 function PensDashboard() {
   const { pens } = Route.useLoaderData()
   const router = useRouter()
-  const createPenAction = useServerFn(createPen)
+  // Dynamic import for createPen
+  const createPenAction = useServerFn(async () => {
+    const { createPen } = await import('@/server/pens/create-pen')
+    return createPen()
+  })
   const [creatingPen, setCreatingPen] = useState(false)
 
   const handleCreatePen = async () => {

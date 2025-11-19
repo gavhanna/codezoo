@@ -1,6 +1,4 @@
 import type { PrismaClient, Session, User } from '@prisma/client'
-import { prisma as prismaInstance } from './db'
-import { getSessionFromRequest } from './auth/session'
 
 export type RequestMetadata = {
   ip: string | null
@@ -36,6 +34,10 @@ export async function buildServerContext(
   request: Request,
   existing?: PartialContext,
 ): Promise<AppServerContext> {
+  // Lazy-load Prisma instance to prevent client bundling
+  const { prisma: prismaInstance } = await import('./db')
+  const { getSessionFromRequest } = await import('./auth/session')
+  
   const context: AppServerContext = {
     prisma: existing?.prisma ?? prismaInstance,
     session: existing?.session ?? null,

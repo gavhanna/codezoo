@@ -2,11 +2,7 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router'
 import { createServerFn, useServerFn } from '@tanstack/react-start'
-import { normalizeEmail, verifyPassword } from '@/server/auth/password'
-import { createSession } from '@/server/auth/session'
-import { requireContext } from '@/server/context'
 import type { AppServerContext } from '@/server/context'
-import { getCurrentUser } from '@/server/auth/current-user'
 import { MarketingShell } from '@/components/MarketingShell'
 
 const loginSchema = z.object({
@@ -31,6 +27,11 @@ type LoginResult =
 const loginUser = createServerFn({ method: 'POST' })
   .inputValidator((input: LoginInput) => loginSchema.parse(input))
   .handler(async ({ data, context }): Promise<Response | LoginResult> => {
+    // Dynamic imports to prevent client bundle inclusion
+    const { normalizeEmail, verifyPassword } = await import('@/server/auth/password')
+    const { createSession } = await import('@/server/auth/session')
+    const { requireContext } = await import('@/server/context')
+    
     const ctx = requireContext(context)
     const email = normalizeEmail(data.email)
     const user = await ctx.prisma.user.findUnique({
@@ -78,6 +79,7 @@ async function ensureLoggedOut(context?: AppServerContext | null) {
   }
 
   if (!context) {
+    const { getCurrentUser } = await import('@/server/auth/current-user')
     const currentUser = await getCurrentUser()
     if (currentUser) {
       throw redirect({ to: '/app' })

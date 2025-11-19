@@ -11,7 +11,7 @@ const inputSchema = z.object({
 export const getPenForEditor = createServerFn({ method: 'POST' })
   .inputValidator((input: z.infer<typeof inputSchema>) => inputSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const { ctx, user } = requireUser(context)
+    const { ctx, user } = await requireUser(context)
 
     const pen = await ctx.prisma.pen.findFirst({
       where: {

@@ -1,20 +1,19 @@
 import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { requireUser } from '@/server/auth/guards'
-import { getCurrentUser } from '@/server/auth/current-user'
-import { getPenForEditor } from '@/server/pens/get-pen-for-editor'
-import {
-  serializePenForEditor,
-  type PenEditorPayload,
-} from '@/server/pens/serialize'
-import { savePenRevision } from '@/server/pens/save-pen-revision'
+import type { PenEditorPayload } from '@/server/pens/serialize'
 
 export const Route = createFileRoute('/app/p/$penId')({
   loader: async ({ context, params }) => {
+    // Dynamic imports to prevent client bundle inclusion
+    const { requireUser } = await import('@/server/auth/guards')
+    const { getCurrentUser } = await import('@/server/auth/current-user')
+    const { getPenForEditor } = await import('@/server/pens/get-pen-for-editor')
+    const { serializePenForEditor } = await import('@/server/pens/serialize')
+    
     const penId = params.penId
 
     if (context && 'prisma' in context) {
-      const { ctx, user } = requireUser(context)
+      const { ctx, user } = await requireUser(context)
       const penRecord = await ctx.prisma.pen.findFirst({
         where: {
           id: penId,
@@ -66,7 +65,11 @@ type SaveMode = 'manual' | 'autosave'
 
 function PenEditorShell() {
   const { pen: loaderPen } = Route.useLoaderData() as { pen: PenEditorPayload }
-  const savePenRevisionFn = useServerFn(savePenRevision)
+  // Dynamic import for savePenRevision
+  const savePenRevisionFn = useServerFn(async (data: any) => {
+    const { savePenRevision } = await import('@/server/pens/save-pen-revision')
+    return savePenRevision(data)
+  })
 
   const [pen, setPen] = useState(loaderPen)
   const [currentCode, setCurrentCode] = useState({

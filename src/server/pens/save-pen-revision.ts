@@ -15,7 +15,7 @@ const inputSchema = z.object({
 export const savePenRevision = createServerFn({ method: 'POST' })
   .inputValidator((input: z.infer<typeof inputSchema>) => inputSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const { ctx, user } = requireUser(context)
+    const { ctx, user } = await requireUser(context)
 
     const penRecord = await ctx.prisma.pen.findFirst({
       where: {

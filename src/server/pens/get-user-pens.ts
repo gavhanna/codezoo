@@ -11,7 +11,7 @@ type SerializedPen = {
 
 export const getUserPens = createServerFn({ method: 'GET' }).handler(
   async ({ context }): Promise<Array<SerializedPen>> => {
-    const { ctx, user } = requireUser(context)
+    const { ctx, user } = await requireUser(context)
     const pens = await ctx.prisma.pen.findMany({
       where: { ownerId: user.id },
       orderBy: { updatedAt: 'desc' },
