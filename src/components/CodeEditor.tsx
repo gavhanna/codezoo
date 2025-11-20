@@ -34,14 +34,17 @@ type PaneId = (typeof EDITOR_PANES)[number]['id']
 const MIN_PANE_PERCENT = 10
 
 interface CodeEditorProps {
+  penId: string
   initialHtml?: string
   initialCss?: string
   initialJs?: string
   onCodeChange?: (code: { html: string; css: string; js: string }) => void
+  layout?: 'horizontal' | 'vertical'
   className?: string
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
+  penId,
   initialHtml = `<div class="container">
   <h1>Hello World!</h1>
   <p>Welcome to CodeZoo Pen Editor</p>
@@ -329,6 +332,8 @@ button:hover {
 
   const debounceDelay = 350
 
+  // Update refs and preview when content changes (e.g., from autosave)
+  // but don't remount editors - that would cause focus loss
   useEffect(() => {
     htmlRef.current = initialHtml
     cssRef.current = initialCss
@@ -338,12 +343,16 @@ button:hover {
       css: initialCss,
       js: initialJs,
     })
+  }, [initialHtml, initialCss, initialJs])
+
+  // Only remount editors when navigating to a different pen
+  useEffect(() => {
     setEditorKeys((prev) => ({
       html: prev.html + 1,
       css: prev.css + 1,
       js: prev.js + 1,
     }))
-  }, [initialHtml, initialCss, initialJs])
+  }, [penId])
 
   useEffect(() => {
     return () => {

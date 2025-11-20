@@ -50,13 +50,21 @@ const config = defineConfig({
     viteReact(),
   ],
   ssr: {
-    noExternal: ['@prisma/client'],
-    external: ['.prisma/client/index-browser', '.prisma/client/default'],
+    external: ['.prisma/client/index-browser', '.prisma/client/default', '@prisma/client'],
+    resolve: {
+      externalConditions: ['node', 'import'],
+    },
   },
   build: {
     rollupOptions: {
       external: ['.prisma/client/index-browser', '.prisma/client/default'],
     },
+  },
+  optimizeDeps: {
+    exclude: ['@prisma/client', '.prisma/client'],
+  },
+  resolve: {
+    conditions: ['node', 'import', 'module', 'browser', 'default'],
   },
 })
 
