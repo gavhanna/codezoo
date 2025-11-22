@@ -87,6 +87,7 @@ function PenEditorShell() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const autosaveTimeoutRef = useRef<number | null>(null)
   const [autosaveSignal, setAutosaveSignal] = useState(0)
+  const lastProcessedSignalRef = useRef(0)
   const [editorLayout, setEditorLayout] = useState<'horizontal' | 'vertical'>('horizontal')
 
   useEffect(() => {
@@ -187,6 +188,7 @@ function PenEditorShell() {
 
   const handleCodeChange = useCallback(
     (code: { html: string; css: string; js: string }) => {
+      logAutosave('handleCodeChange called', { code })
       setCurrentCode(code)
       setHasUnsavedChanges(true)
       setSaveStatus('idle')
@@ -204,6 +206,10 @@ function PenEditorShell() {
 
   useEffect(() => {
     if (autosaveSignal === 0) return
+    // Prevent re-triggering if signal hasn't changed
+    if (autosaveSignal === lastProcessedSignalRef.current) return
+    
+    lastProcessedSignalRef.current = autosaveSignal
     logAutosave('autosave signal observed', { autosaveSignal })
     void handleSave('autosave')
   }, [autosaveSignal, handleSave])

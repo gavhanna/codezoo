@@ -332,8 +332,8 @@ button:hover {
 
   const debounceDelay = 350
 
-  // Update refs and preview when content changes (e.g., from autosave)
-  // but don't remount editors - that would cause focus loss
+  // Only remount editors and reset refs when navigating to a different pen
+  // When autosave completes and initialHtml/Css/Js change, do nothing - refs already have current content
   useEffect(() => {
     htmlRef.current = initialHtml
     cssRef.current = initialCss
@@ -343,15 +343,12 @@ button:hover {
       css: initialCss,
       js: initialJs,
     })
-  }, [initialHtml, initialCss, initialJs])
-
-  // Only remount editors when navigating to a different pen
-  useEffect(() => {
     setEditorKeys((prev) => ({
       html: prev.html + 1,
       css: prev.css + 1,
       js: prev.js + 1,
     }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [penId])
 
   useEffect(() => {
