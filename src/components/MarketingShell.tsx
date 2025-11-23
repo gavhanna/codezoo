@@ -14,7 +14,7 @@ export function MarketingShell({ children }: MarketingShellProps) {
       <header className="p-4 flex items-center justify-between bg-gray-900 text-white shadow-lg">
         <Link to="/" className="flex items-center gap-3">
           <img
-            src="/tanstack-circle-logo.png"
+            src="/logo.png"
             alt="Codezoo"
             className="h-10 w-10 rounded-full border border-white/20"
           />
