@@ -39,7 +39,7 @@ COPY --from=prerelease /usr/src/app/node_modules/@prisma/client node_modules/@pr
 # User
 USER bun
 EXPOSE 3000/tcp
-COPY docker-entrypoint.sh .
+COPY --chown=bun:bun docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
