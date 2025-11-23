@@ -49,8 +49,8 @@ export const Route = createFileRoute('/app/p/$penId')({
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Clock, Save, Settings, Share2 } from 'lucide-react'
-import CodeEditor from '@/components/CodeEditor'
-import { LayoutToggle } from '@/components/SplitPane'
+import CodeEditor from '@/features/editor/CodeEditor'
+import { LayoutToggle } from '@/features/editor/components/LayoutToggle'
 import { EditorLayout } from '@/components/EditorLayout'
 
 const AUTOSAVE_DELAY_MS = 4000
