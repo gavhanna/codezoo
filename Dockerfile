@@ -39,4 +39,8 @@ COPY --from=prerelease /usr/src/app/node_modules/@prisma/client node_modules/@pr
 # User
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", ".output/server/index.mjs" ]
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+CMD [ "bun", "run", ".output/server/index.mjs" ]
