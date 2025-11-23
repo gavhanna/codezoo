@@ -23,14 +23,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </Link>
         <div className="flex items-center gap-3 text-sm text-gray-300">
-          <Link
-            to="/"
-            className="px-3 py-1.5 rounded-lg border border-white/10 hover:border-cyan-400 transition-colors"
-          >
-            Marketing site
-          </Link>
           <div className="flex items-center gap-2">
-            <ArrowLeftCircle className="w-4 h-4 text-gray-500" />
             <span>{currentUser?.email ?? 'Signed in'}</span>
           </div>
         </div>

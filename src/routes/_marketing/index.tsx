@@ -9,27 +9,27 @@ export const Route = createFileRoute('/_marketing/')({
 const highlights = [
   {
     icon: <Zap className="w-10 h-10 text-cyan-400" />,
-    title: 'Live preview',
+    title: 'Bun-Powered Performance',
     blurb:
-      'Instant feedback with sandboxed iframes and strict CSP so your host stays safe.',
+      'Experience blazing fast server-side execution. CodeZoo leverages the raw speed of Bun for instant feedback.',
   },
   {
     icon: <NotebookPen className="w-10 h-10 text-cyan-400" />,
-    title: 'Revision history',
+    title: 'Professional Editor',
     blurb:
-      'Automatic autosaves with manual snapshots so you never lose a creative burst.',
+      'A full-featured Monaco editor with TypeScript support, Emmet, and smart completions right in your browser.',
   },
   {
     icon: <ShieldCheck className="w-10 h-10 text-cyan-400" />,
-    title: 'Secure sessions',
+    title: 'Secure & Private',
     blurb:
-      'HttpOnly cookies, CSRF protection, and per-session revocation built in from day one.',
+      'Self-hostable by design. Keep your code under your control with strict sandboxing and privacy-first architecture.',
   },
   {
     icon: <Sparkles className="w-10 h-10 text-cyan-400" />,
-    title: 'Extendable core',
+    title: 'Instant Preview',
     blurb:
-      'Start with pens, unlock templates, orgs, and asset uploads without rewriting anything.',
+      'See your changes in real-time. Our isolated preview environment ensures safety without sacrificing speed.',
   },
 ]
 
@@ -39,16 +39,14 @@ function Landing() {
       <section className="px-6 py-16 md:py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
         <div className="max-w-5xl mx-auto text-center space-y-8">
           <p className="uppercase tracking-[0.4em] text-cyan-400 text-sm">
-            Build, preview, share
+            Code, Preview, Deploy
           </p>
           <h1 className="text-4xl md:text-6xl font-black leading-tight">
-            The open-source playground for modern web pens.
+            The modern playground for <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">creative developers</span>.
           </h1>
           <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto">
-            Codezoo pairs Bun-powered server functions with Monaco editors to
-            deliver a predictable, self-hostable alternative to CodePen. Sign up
-            to compose HTML/CSS/JS experiments, save revisions, and share
-            sandboxed previews without surrendering privacy or control.
+            CodeZoo combines the power of a local dev environment with the convenience of the cloud. 
+            Build, test, and share your web experiments with a tool designed for performance and privacy.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link

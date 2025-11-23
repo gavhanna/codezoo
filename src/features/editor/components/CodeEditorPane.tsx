@@ -1,5 +1,5 @@
 import React from 'react'
-import { Minimize2 } from 'lucide-react'
+import { Minimize2, Maximize2 } from 'lucide-react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import { registerSafeEmmet } from '@/utils/safeEmmet'
 
@@ -26,6 +26,7 @@ interface CodeEditorPaneProps {
   editorKey?: string | number
   onCollapse?: () => void
   collapseDisabled?: boolean
+  collapsed?: boolean
 }
 
 export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
@@ -39,9 +40,10 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
   editorKey,
   onCollapse,
   collapseDisabled = false,
+  collapsed = false,
 }) => {
   return (
-    <div className={`bg-slate-900 border border-white/5 rounded-2xl overflow-hidden flex flex-col h-full ${className}`}>
+    <div className={`bg-slate-900 border border-white/5  overflow-hidden flex flex-col ${collapsed ? 'h-auto' : 'h-full'} ${className}`}>
       <div className="bg-slate-800 px-4 py-3 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-2">
           {icon}
@@ -56,55 +58,57 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
                 ? 'text-slate-600 cursor-not-allowed'
                 : 'text-gray-400 hover:text-white hover:bg-slate-700'
             }`}
-            title={collapseDisabled ? 'At least one editor must stay open' : 'Collapse editor'}
-            aria-label="Collapse editor"
+            title={collapseDisabled ? 'At least one editor must stay open' : collapsed ? 'Expand editor' : 'Collapse editor'}
+            aria-label={collapsed ? 'Expand editor' : 'Collapse editor'}
           >
-            <Minimize2 className="w-4 h-4" />
+            {collapsed ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
           </button>
         )}
       </div>
-      <div className="flex-1 min-h-0">
-        <Editor
-          key={editorKey}
-          height="100%"
-          language={language}
-          {...(value !== undefined
-            ? { value }
-            : { defaultValue: initialValue ?? '' })}
-          beforeMount={enableEmmetSupport}
-          onChange={(value) => onChange(value || '')}
-          theme="vs-dark"
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            fontFamily: '"Cascadia Code", "Fira Code", "Consolas", monospace',
-            lineNumbers: 'on',
-            roundedSelection: false,
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-            tabSize: 2,
-            insertSpaces: true,
-            wordWrap: 'on',
-            folding: true,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 3,
-            padding: { top: 16, bottom: 16 },
-            suggestOnTriggerCharacters: true,
-            quickSuggestions: true,
-            parameterHints: { enabled: true },
-            showFoldingControls: 'always',
-            smoothScrolling: true,
-            cursorBlinking: 'smooth',
-            cursorStyle: 'line',
-            bracketPairColorization: { enabled: true },
-            guides: {
-              bracketPairs: true,
-              indentation: true,
-              highlightActiveIndentation: true,
-            },
-          }}
-        />
-      </div>
+      {!collapsed && (
+        <div className="flex-1 min-h-0">
+          <Editor
+            key={editorKey}
+            height="100%"
+            language={language}
+            {...(value !== undefined
+              ? { value }
+              : { defaultValue: initialValue ?? '' })}
+            beforeMount={enableEmmetSupport}
+            onChange={(value) => onChange(value || '')}
+            theme="vs-dark"
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              fontFamily: '"Cascadia Code", "Fira Code", "Consolas", monospace',
+              lineNumbers: 'on',
+              roundedSelection: false,
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+              tabSize: 2,
+              insertSpaces: true,
+              wordWrap: 'on',
+              folding: true,
+              lineDecorationsWidth: 0,
+              lineNumbersMinChars: 3,
+              padding: { top: 16, bottom: 16 },
+              suggestOnTriggerCharacters: true,
+              quickSuggestions: true,
+              parameterHints: { enabled: true },
+              showFoldingControls: 'always',
+              smoothScrolling: true,
+              cursorBlinking: 'smooth',
+              cursorStyle: 'line',
+              bracketPairColorization: { enabled: true },
+              guides: {
+                bracketPairs: true,
+                indentation: true,
+                highlightActiveIndentation: true,
+              },
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

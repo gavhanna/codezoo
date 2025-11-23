@@ -48,8 +48,8 @@ export const Route = createFileRoute('/app/p/$penId')({
 })
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Clock, Save, Settings, Share2 } from 'lucide-react'
-import CodeEditor from '@/features/editor/CodeEditor'
+import { ArrowLeft, Clock, Save } from 'lucide-react'
+import { CodeEditor } from '@/features/editor/CodeEditor'
 import { LayoutToggle } from '@/features/editor/components/LayoutToggle'
 import { EditorLayout } from '@/components/EditorLayout'
 
@@ -249,36 +249,31 @@ function PenEditorShell() {
       <div className="flex-1 flex flex-col bg-slate-950 text-white">
         <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex-shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-4">
               <Link
                 to="/app"
-                className="inline-flex items-center gap-2 text-sm text-gray-200 hover:text-white px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-slate-800 transition-colors"
+                title="Back to dashboard"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to dashboard
+                <ArrowLeft className="w-5 h-5" />
               </Link>
+              <div className="h-8 w-px bg-white/10 mx-2 hidden sm:block" />
               <div>
-                <p className="uppercase tracking-[0.3em] text-cyan-400 text-xs mb-1">
-                  Editing pen
-                </p>
-                <h1 className="text-2xl font-bold">{pen.title || 'Untitled pen'}</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl font-bold text-white">{pen.title || 'Untitled pen'}</h1>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    Editor
+                  </span>
+                </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <Clock className="w-3 h-3 text-gray-400" />
-                  <p className="text-gray-400 text-sm">{saveDescription}</p>
+                  <Clock className="w-3 h-3 text-gray-500" />
+                  <p className="text-gray-500 text-xs font-medium">{saveDescription}</p>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               <LayoutToggle layout={editorLayout} onToggle={handleToggleLayout} />
-              <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                Settings
-              </button>
-              <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
-                Share
-              </button>
               <button
                 onClick={() => {
                   void handleSave()
@@ -289,10 +284,10 @@ function PenEditorShell() {
                   saveStatus === 'autosaving'
                 }
                 className={`
-                  px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2
+                  px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2 text-sm
                   ${hasUnsavedChanges
-                    ? 'bg-cyan-500 text-black hover:bg-cyan-400'
-                    : 'bg-slate-700 text-gray-400 cursor-not-allowed'
+                    ? 'bg-cyan-500 text-black hover:bg-cyan-400 shadow-lg shadow-cyan-500/20'
+                    : 'bg-slate-800 text-gray-500 cursor-not-allowed'
                   }
                 `}
               >

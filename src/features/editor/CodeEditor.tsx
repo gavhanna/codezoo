@@ -4,7 +4,7 @@ import { CodeEditorPane } from './components/CodeEditorPane'
 import { PreviewPane } from './components/PreviewPane'
 import { useEditorLayout } from './hooks/useEditorLayout'
 import { useCodePreview } from './hooks/useCodePreview'
-import { MIN_PANE_PERCENT } from './constants'
+import { EDITOR_PANES, MIN_PANE_PERCENT } from './constants'
 
 interface CodeEditorProps {
   penId: string
@@ -16,7 +16,7 @@ interface CodeEditorProps {
   className?: string
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({
+export const CodeEditor: React.FC<CodeEditorProps> = ({
   penId,
   initialHtml = `<div class="container">
   <h1>Hello World!</h1>
@@ -83,6 +83,7 @@ button:hover {
 
   const {
     paneSizes,
+    collapsedPanes,
     handleToggleCollapse,
     visiblePanes,
     handleDividerMouseDown,
@@ -116,18 +117,35 @@ button:hover {
             editorStackDirection === 'vertical' ? 'flex-col' : 'flex-row'
           }`}
         >
-          {visiblePanes.map((pane, index) => {
+          {EDITOR_PANES.map((pane, index) => {
             const Icon = pane.icon
-            const paneStyle =
-              editorStackDirection === 'vertical'
+            const isCollapsed = collapsedPanes[pane.id]
+            const isVisible = !isCollapsed
+
+            // Calculate style based on collapsed state
+            let paneStyle: React.CSSProperties = {}
+            
+            if (isCollapsed) {
+              paneStyle = {
+                flex: '0 0 auto',
+              }
+            } else {
+              paneStyle = editorStackDirection === 'vertical'
                 ? {
                     flexBasis: `${paneSizes[pane.id]}%`,
                     minHeight: `${MIN_PANE_PERCENT}%`,
+                    flexGrow: 1,
                   }
                 : {
                     flexBasis: `${paneSizes[pane.id]}%`,
                     minWidth: `${MIN_PANE_PERCENT}%`,
+                    flexGrow: 1,
                   }
+            }
+
+            // Find the index of this pane in the visiblePanes array to map to divider logic
+            const visibleIndex = visiblePanes.findIndex(p => p.id === pane.id)
+            const showDivider = isVisible && visibleIndex < visiblePanes.length - 1
 
             return (
               <React.Fragment key={pane.id}>
@@ -149,22 +167,23 @@ button:hover {
                     editorKey={editorKeys[pane.id]}
                     icon={<Icon className={`w-4 h-4 ${pane.accent}`} />}
                     onCollapse={() => handleToggleCollapse(pane.id)}
-                    collapseDisabled={visiblePanes.length === 1}
+                    collapseDisabled={visiblePanes.length === 1 && isVisible}
+                    collapsed={isCollapsed}
                   />
                 </div>
-                {index < visiblePanes.length - 1 && (
+                {showDivider && (
                   <div
                     role="separator"
                     aria-orientation={editorStackDirection as 'horizontal' | 'vertical'}
-                    onMouseDown={handleDividerMouseDown(index)}
+                    onMouseDown={handleDividerMouseDown(visibleIndex)}
                     className={`
                       ${
                         editorStackDirection === 'vertical'
-                          ? 'h-1 cursor-row-resize my-2'
-                          : 'w-1 cursor-col-resize mx-2'
+                          ? 'h-1 cursor-row-resize'
+                          : 'w-1 cursor-col-resize'
                       }
                       bg-slate-800 hover:bg-cyan-600 transition-colors flex-shrink-0 rounded-full flex items-center justify-center
-                      ${draggingDivider === index ? 'bg-cyan-500' : ''}
+                      ${draggingDivider === visibleIndex ? 'bg-cyan-500' : ''}
                     `}
                   />
                 )}
@@ -190,4 +209,4 @@ button:hover {
   )
 }
 
-export default CodeEditor
+
