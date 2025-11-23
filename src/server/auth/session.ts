@@ -32,7 +32,7 @@ export function buildSessionCookie(token: string, expiresAt: Date) {
     `HttpOnly`,
     `SameSite=Strict`,
   ]
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env.NODE_ENV !== 'development' && process.env.DISABLE_SECURE_COOKIES !== 'true') {
     base.push('Secure')
   }
   base.push(`Expires=${expiresAt.toUTCString()}`)
@@ -49,7 +49,7 @@ export function buildSessionDestroyCookie() {
     'Max-Age=0',
     `Expires=${new Date(0).toUTCString()}`,
   ]
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env.NODE_ENV !== 'development' && process.env.DISABLE_SECURE_COOKIES !== 'true') {
     base.push('Secure')
   }
   return base.join('; ')
