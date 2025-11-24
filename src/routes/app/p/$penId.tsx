@@ -9,7 +9,7 @@ export const Route = createFileRoute('/app/p/$penId')({
     const { getCurrentUser } = await import('@/server/auth/current-user')
     const { getPenForEditor } = await import('@/server/pens/get-pen-for-editor')
     const { serializePenForEditor } = await import('@/server/pens/serialize')
-    
+
     const penId = params.penId
 
     if (context && 'prisma' in context) {
@@ -208,7 +208,7 @@ function PenEditorShell() {
     if (autosaveSignal === 0) return
     // Prevent re-triggering if signal hasn't changed
     if (autosaveSignal === lastProcessedSignalRef.current) return
-    
+
     lastProcessedSignalRef.current = autosaveSignal
     logAutosave('autosave signal observed', { autosaveSignal })
     void handleSave('autosave')
@@ -247,7 +247,7 @@ function PenEditorShell() {
   return (
     <EditorLayout>
       <div className="flex-1 flex flex-col bg-slate-950 text-white">
-        <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex-shrink-0">
+        <header className="bg-slate-900 border-b border-white/5 px-6 py-4 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link

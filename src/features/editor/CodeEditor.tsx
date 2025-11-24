@@ -109,22 +109,21 @@ button:hover {
 
   const editorPanel = (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      
+
       <div className="flex-1 min-h-0 overflow-hidden">
         <div
           ref={editorStackRef}
-          className={`h-full w-full flex ${
-            editorStackDirection === 'vertical' ? 'flex-col' : 'flex-row'
-          }`}
+          className={`h-full w-full flex ${editorStackDirection === 'vertical' ? 'flex-col' : 'flex-row'
+            }`}
         >
-          {EDITOR_PANES.map((pane, index) => {
+          {EDITOR_PANES.map((pane, _index) => {
             const Icon = pane.icon
             const isCollapsed = collapsedPanes[pane.id]
             const isVisible = !isCollapsed
 
             // Calculate style based on collapsed state
             let paneStyle: React.CSSProperties = {}
-            
+
             if (isCollapsed) {
               paneStyle = {
                 flex: '0 0 auto',
@@ -132,15 +131,15 @@ button:hover {
             } else {
               paneStyle = editorStackDirection === 'vertical'
                 ? {
-                    flexBasis: `${paneSizes[pane.id]}%`,
-                    minHeight: `${MIN_PANE_PERCENT}%`,
-                    flexGrow: 1,
-                  }
+                  flexBasis: `${paneSizes[pane.id]}%`,
+                  minHeight: `${MIN_PANE_PERCENT}%`,
+                  flexGrow: 1,
+                }
                 : {
-                    flexBasis: `${paneSizes[pane.id]}%`,
-                    minWidth: `${MIN_PANE_PERCENT}%`,
-                    flexGrow: 1,
-                  }
+                  flexBasis: `${paneSizes[pane.id]}%`,
+                  minWidth: `${MIN_PANE_PERCENT}%`,
+                  flexGrow: 1,
+                }
             }
 
             // Find the index of this pane in the visiblePanes array to map to divider logic
@@ -160,8 +159,8 @@ button:hover {
                       pane.id === 'html'
                         ? htmlRef.current
                         : pane.id === 'css'
-                        ? cssRef.current
-                        : jsRef.current
+                          ? cssRef.current
+                          : jsRef.current
                     }
                     onChange={(value) => handleCodeChange(pane.id, value)}
                     editorKey={editorKeys[pane.id]}
@@ -177,12 +176,11 @@ button:hover {
                     aria-orientation={editorStackDirection as 'horizontal' | 'vertical'}
                     onMouseDown={handleDividerMouseDown(visibleIndex)}
                     className={`
-                      ${
-                        editorStackDirection === 'vertical'
-                          ? 'h-1 cursor-row-resize'
-                          : 'w-1 cursor-col-resize'
+                      ${editorStackDirection === 'vertical'
+                        ? 'h-1 cursor-row-resize'
+                        : 'w-1 cursor-col-resize'
                       }
-                      bg-slate-800 hover:bg-cyan-600 transition-colors flex-shrink-0 rounded-full flex items-center justify-center
+                      bg-slate-800 hover:bg-cyan-600 transition-colors shrink-0 rounded-full flex items-center justify-center
                       ${draggingDivider === visibleIndex ? 'bg-cyan-500' : ''}
                     `}
                   />
