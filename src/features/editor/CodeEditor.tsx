@@ -18,63 +18,9 @@ interface CodeEditorProps {
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
   penId,
-  initialHtml = `<div class="container">
-  <h1>Hello World!</h1>
-  <p>Welcome to CodeZoo Pen Editor</p>
-  <button id="clickMe">Click Me!</button>
-</div>`,
-  initialCss = `body {
-  font-family: 'Arial', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  margin: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.container {
-  text-align: center;
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
-
-h1 {
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-p {
-  color: #666;
-  margin-bottom: 1.5rem;
-}
-
-button {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background: #5a6fd8;
-  transform: translateY(-2px);
-}`,
-  initialJs = `document.getElementById('clickMe').addEventListener('click', function() {
-  alert('Hello from CodeZoo! 🚀');
-
-  // Animate the button
-  this.style.transform = 'scale(0.95)';
-  setTimeout(() => {
-    this.style.transform = 'scale(1)';
-  }, 200);
-});`,
+  initialHtml,
+  initialCss,
+  initialJs,
   onCodeChange,
   className = '',
   layout = 'horizontal'
@@ -100,9 +46,9 @@ button:hover {
     cssRef,
     jsRef
   } = useCodePreview({
-    initialHtml,
-    initialCss,
-    initialJs,
+    initialHtml: initialHtml || '',
+    initialCss: initialCss || '',
+    initialJs: initialJs || '',
     penId,
     onCodeChange
   })
