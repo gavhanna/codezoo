@@ -15,6 +15,15 @@ const enableEmmetSupport = (monaco: Monaco) => {
   isEmmetInitialized = true
 }
 
+// Cleanup on module unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (disposeEmmet) {
+      disposeEmmet()
+    }
+  })
+}
+
 interface CodeEditorPaneProps {
   title: string
   language: string

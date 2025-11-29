@@ -49,9 +49,11 @@ export const Route = createFileRoute('/app/p/$penId')({
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Clock, Save } from 'lucide-react'
-import { CodeEditor } from '@/features/editor/CodeEditor'
+import { Suspense, lazy } from 'react'
 import { LayoutToggle } from '@/features/editor/components/LayoutToggle'
 import { EditorLayout } from '@/components/EditorLayout'
+
+const CodeEditor = lazy(() => import('@/features/editor/CodeEditor').then(module => ({ default: module.CodeEditor })))
 
 const AUTOSAVE_DELAY_MS = 4000
 
@@ -299,15 +301,21 @@ function PenEditorShell() {
         </header>
 
         <div className="flex-1 min-h-0">
-          <CodeEditor
-            penId={pen.id}
-            initialHtml={pen.latestRevision.html}
-            initialCss={pen.latestRevision.css}
-            initialJs={pen.latestRevision.js}
-            onCodeChange={handleCodeChange}
-            layout={editorLayout}
-            className="h-full"
-          />
+          <Suspense fallback={
+            <div className="h-full w-full bg-slate-950 text-white flex items-center justify-center">
+              <div className="text-gray-400">Loading editor...</div>
+            </div>
+          }>
+            <CodeEditor
+              penId={pen.id}
+              initialHtml={pen.latestRevision.html}
+              initialCss={pen.latestRevision.css}
+              initialJs={pen.latestRevision.js}
+              onCodeChange={handleCodeChange}
+              layout={editorLayout}
+              className="h-full"
+            />
+          </Suspense>
         </div>
       </div>
     </EditorLayout>
