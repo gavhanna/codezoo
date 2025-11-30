@@ -1,10 +1,16 @@
 import React, { useState } from 'react'
+import { useServerFn } from '@tanstack/react-start'
 import { SplitPane } from '@/components/ui/SplitPane'
 import { CodeEditorPane } from './components/CodeEditorPane'
 import { PreviewPane } from './components/PreviewPane'
 import { useEditorLayout } from './hooks/useEditorLayout'
 import { useCodePreview } from './hooks/useCodePreview'
 import { EDITOR_PANES, MIN_PANE_PERCENT } from './constants'
+import {
+  DEFAULT_PREPROCESSORS,
+  type PreprocessorSelection,
+} from '@/types/preprocessors'
+import type { CompileError, CompileResult } from '@/types/preprocessors'
 
 interface CodeEditorProps {
   penId: string
@@ -14,6 +20,8 @@ interface CodeEditorProps {
   onCodeChange?: (code: { html: string; css: string; js: string }) => void
   layout?: 'horizontal' | 'vertical'
   className?: string
+  preprocessors?: PreprocessorSelection
+  onCompileErrorsChange?: (errors?: CompileError[]) => void
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -23,9 +31,19 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   initialJs,
   onCodeChange,
   className = '',
-  layout = 'horizontal'
+  layout = 'horizontal',
+  preprocessors = DEFAULT_PREPROCESSORS,
+  onCompileErrorsChange,
 }) => {
   const [leftPaneSize, setLeftPaneSize] = useState(33)
+  const compilePenFn = useServerFn(async (payload: any) => {
+    const { compilePen } = await import('@/server/pens/compile-pen')
+    return compilePen(payload)
+  })
+  const compile = React.useCallback(
+    (input: any) => compilePenFn({ data: input }) as Promise<CompileResult>,
+    [compilePenFn],
+  )
 
   const {
     paneSizes,
@@ -44,14 +62,54 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     editorKeys,
     htmlRef,
     cssRef,
-    jsRef
+    jsRef,
+    compileErrors,
+    isCompiling,
   } = useCodePreview({
     initialHtml: initialHtml || '',
     initialCss: initialCss || '',
     initialJs: initialJs || '',
     penId,
+    preprocessors,
+    compile,
     onCodeChange
   })
+
+  const resolveLanguage = (paneId: keyof typeof editorKeys, defaultLanguage: string) => {
+    if (paneId === 'html') {
+      if (preprocessors.html === 'pug') return 'pug'
+      if (preprocessors.html === 'markdown') return 'markdown'
+      return 'html'
+    }
+    if (paneId === 'css') {
+      if (preprocessors.css === 'scss') return 'scss'
+      if (preprocessors.css === 'less') return 'less'
+      return 'css'
+    }
+    if (paneId === 'js') {
+      if (preprocessors.js === 'typescript') return 'typescript'
+      if (preprocessors.js === 'coffeescript') return 'coffeescript'
+      return 'javascript'
+    }
+    return defaultLanguage
+  }
+
+  React.useEffect(() => {
+    onCompileErrorsChange?.(compileErrors)
+  }, [compileErrors, onCompileErrorsChange])
+
+  const resolveBadge = (paneId: keyof typeof editorKeys): string | null => {
+    if (paneId === 'html') {
+      return preprocessors.html !== 'none' ? preprocessors.html.toUpperCase() : null
+    }
+    if (paneId === 'css') {
+      return preprocessors.css !== 'none' ? preprocessors.css.toUpperCase() : null
+    }
+    if (paneId === 'js') {
+      return preprocessors.js !== 'none' ? preprocessors.js.toUpperCase() : null
+    }
+    return null
+  }
 
   const editorPanel = (
     <div className="h-full w-full flex flex-col overflow-hidden">
@@ -100,7 +158,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                 >
                   <CodeEditorPane
                     title={pane.label}
-                    language={pane.language}
+                    language={resolveLanguage(pane.id, pane.language)}
                     initialValue={
                       pane.id === 'html'
                         ? htmlRef.current
@@ -109,8 +167,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                           : jsRef.current
                     }
                     onChange={(value) => handleCodeChange(pane.id, value)}
-                    editorKey={editorKeys[pane.id]}
+                    editorKey={`${editorKeys[pane.id]}-${(preprocessors as any)[pane.id]}`}
                     icon={<Icon className={`w-4 h-4 ${pane.accent}`} />}
+                    badge={resolveBadge(pane.id)}
                     onCollapse={() => handleToggleCollapse(pane.id)}
                     collapseDisabled={visiblePanes.length === 1 && isVisible}
                     collapsed={isCollapsed}
@@ -143,7 +202,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     <div className={`h-full w-full overflow-hidden ${className}`}>
       <SplitPane
         left={editorPanel}
-        right={<PreviewPane html={previewCode.html} css={previewCode.css} js={previewCode.js} />}
+        right={<PreviewPane html={previewCode.html} css={previewCode.css} js={previewCode.js} isCompiling={isCompiling} />}
         defaultLeftSize={leftPaneSize}
         leftSize={leftPaneSize}
         onResize={setLeftPaneSize}
@@ -152,5 +211,3 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     </div>
   )
 }
-
-

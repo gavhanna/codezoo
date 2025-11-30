@@ -6,13 +6,15 @@ interface PreviewPaneProps {
   css: string
   js: string
   className?: string
+  isCompiling?: boolean
 }
 
 export const PreviewPane: React.FC<PreviewPaneProps> = ({
   html,
   css,
   js,
-  className = ''
+  className = '',
+  isCompiling = false
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
@@ -50,6 +52,9 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
           <Monitor className="w-4 h-4 text-gray-400" />
           <h3 className="text-sm font-medium text-gray-300">Preview</h3>
         </div>
+        {isCompiling && (
+          <span className="text-xs text-gray-400">Compiling…</span>
+        )}
       </div>
       <div className="flex-1 min-h-0 bg-white overflow-hidden">
         <iframe

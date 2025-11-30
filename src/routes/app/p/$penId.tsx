@@ -52,6 +52,12 @@ import { ArrowLeft, Clock, Save } from 'lucide-react'
 import { Suspense, lazy } from 'react'
 import { LayoutToggle } from '@/features/editor/components/LayoutToggle'
 import { EditorLayout } from '@/components/EditorLayout'
+import { EditorSettingsDialog } from '@/features/editor/components/EditorSettingsDialog'
+import {
+  DEFAULT_PREPROCESSORS,
+  type PreprocessorSelection,
+} from '@/types/preprocessors'
+import type { CompileError } from '@/types/preprocessors'
 
 const CodeEditor = lazy(() => import('@/features/editor/CodeEditor').then(module => ({ default: module.CodeEditor })))
 
@@ -79,6 +85,9 @@ function PenEditorShell() {
     css: loaderPen.latestRevision.css,
     js: loaderPen.latestRevision.js,
   })
+  const [preprocessors, setPreprocessors] = useState<PreprocessorSelection>(
+    loaderPen.latestRevision.preprocessors || DEFAULT_PREPROCESSORS,
+  )
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [lastSaveTime, setLastSaveTime] = useState<Date>(
     () => new Date(loaderPen.latestRevision.updatedAt),
@@ -91,6 +100,15 @@ function PenEditorShell() {
   const [autosaveSignal, setAutosaveSignal] = useState(0)
   const lastProcessedSignalRef = useRef(0)
   const [editorLayout, setEditorLayout] = useState<'horizontal' | 'vertical'>('horizontal')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [compileErrors, setCompileErrors] = useState<CompileError[] | undefined>(
+    undefined,
+  )
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     setPen(loaderPen)
@@ -99,6 +117,9 @@ function PenEditorShell() {
       css: loaderPen.latestRevision.css,
       js: loaderPen.latestRevision.js,
     })
+    setPreprocessors(
+      loaderPen.latestRevision.preprocessors || DEFAULT_PREPROCESSORS,
+    )
     setLastSaveTime(new Date(loaderPen.latestRevision.updatedAt))
     setHasUnsavedChanges(false)
     setSaveStatus('idle')
@@ -139,15 +160,16 @@ function PenEditorShell() {
             penId: pen.id,
             html: currentCode.html,
             css: currentCode.css,
-            js: currentCode.js,
-            kind: revisionKind,
-          },
-        })) as PenEditorPayload
+          js: currentCode.js,
+          kind: revisionKind,
+          preprocessors,
+        },
+      })) as PenEditorPayload
 
-        setPen(updatedPen)
-        setLastSaveTime(new Date(updatedPen.latestRevision.updatedAt))
-        setHasUnsavedChanges(false)
-        setSaveStatus('idle')
+      setPen(updatedPen)
+      setLastSaveTime(new Date(updatedPen.latestRevision.updatedAt))
+      setHasUnsavedChanges(false)
+      setSaveStatus('idle')
         logAutosave('save success', {
           mode,
           latestRev: updatedPen.latestRevision.revNumber,
@@ -183,6 +205,14 @@ function PenEditorShell() {
       setAutosaveSignal((signal) => signal + 1)
     }, AUTOSAVE_DELAY_MS)
   }, [clearAutosaveTimer])
+
+  const handlePreprocessorChange = useCallback((next: PreprocessorSelection) => {
+    setPreprocessors(next)
+    setHasUnsavedChanges(true)
+    setSaveStatus('idle')
+    setSaveError(null)
+    scheduleAutosave()
+  }, [scheduleAutosave])
 
   const handleToggleLayout = useCallback(() => {
     setEditorLayout(prev => (prev === 'horizontal' ? 'vertical' : 'horizontal'))
@@ -277,6 +307,12 @@ function PenEditorShell() {
             <div className="flex items-center gap-3">
               <LayoutToggle layout={editorLayout} onToggle={handleToggleLayout} />
               <button
+                onClick={() => setSettingsOpen(true)}
+                className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-sm border border-white/5"
+              >
+                Settings
+              </button>
+              <button
                 onClick={() => {
                   void handleSave()
                 }}
@@ -306,17 +342,33 @@ function PenEditorShell() {
               <div className="text-gray-400">Loading editor...</div>
             </div>
           }>
-            <CodeEditor
-              penId={pen.id}
-              initialHtml={pen.latestRevision.html}
-              initialCss={pen.latestRevision.css}
-              initialJs={pen.latestRevision.js}
-              onCodeChange={handleCodeChange}
-              layout={editorLayout}
-              className="h-full"
-            />
+            {isClient ? (
+              <CodeEditor
+                penId={pen.id}
+                initialHtml={pen.latestRevision.html}
+                initialCss={pen.latestRevision.css}
+                initialJs={pen.latestRevision.js}
+                onCodeChange={handleCodeChange}
+                layout={editorLayout}
+                className="h-full"
+                preprocessors={preprocessors}
+                onCompileErrorsChange={setCompileErrors}
+              />
+            ) : (
+              <div className="h-full w-full bg-slate-950 text-white flex items-center justify-center">
+                <div className="text-gray-400">Loading editor...</div>
+              </div>
+            )}
           </Suspense>
         </div>
+        <EditorSettingsDialog
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          preprocessors={preprocessors}
+          onChange={handlePreprocessorChange}
+          onReset={() => handlePreprocessorChange(DEFAULT_PREPROCESSORS)}
+          errors={compileErrors}
+        />
       </div>
     </EditorLayout>
   )

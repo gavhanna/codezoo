@@ -25,6 +25,11 @@ export const createPen = createServerFn({ method: 'POST' }).handler(
             js: DEFAULT_JS,
             meta: {
               panelLayout: 'stacked',
+              preprocessors: {
+                html: 'none',
+                css: 'none',
+                js: 'none',
+              },
             },
           },
         },

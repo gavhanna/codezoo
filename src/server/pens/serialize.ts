@@ -1,4 +1,8 @@
 import type { Pen, PenRevision } from '@prisma/client'
+import {
+  DEFAULT_PREPROCESSORS,
+  type PreprocessorSelection,
+} from '@/types/preprocessors'
 
 export type EditorRevisionPayload = {
   id: string
@@ -8,6 +12,12 @@ export type EditorRevisionPayload = {
   css: string
   js: string
   updatedAt: string
+  preprocessors: PreprocessorSelection
+  compiled?: {
+    html: string
+    css: string
+    js: string
+  }
 }
 
 export type PenEditorPayload = {
@@ -16,6 +26,39 @@ export type PenEditorPayload = {
   slug: string | null
   visibility: string
   latestRevision: EditorRevisionPayload
+}
+
+const normalizePreprocessors = (
+  meta?: unknown,
+): PreprocessorSelection => {
+  const maybe = (meta as any)?.preprocessors
+  if (!maybe || typeof maybe !== 'object') {
+    return DEFAULT_PREPROCESSORS
+  }
+
+  const normalize = <T extends keyof PreprocessorSelection>(
+    key: T,
+  ): PreprocessorSelection[T] => {
+    const value = maybe[key]
+    switch (key) {
+      case 'html':
+        return value === 'pug' || value === 'markdown' ? value : 'none'
+      case 'css':
+        return value === 'scss' || value === 'less' ? value : 'none'
+      case 'js':
+        return value === 'typescript' ||
+          value === 'babel' ||
+          value === 'coffeescript'
+          ? value
+          : 'none'
+    }
+  }
+
+  return {
+    html: normalize('html'),
+    css: normalize('css'),
+    js: normalize('js'),
+  }
 }
 
 export function serializePenForEditor(
@@ -39,6 +82,8 @@ export function serializePenForEditor(
       css: latestRevision.css,
       js: latestRevision.js,
       updatedAt: latestRevision.updatedAt.toISOString(),
+      preprocessors: normalizePreprocessors(latestRevision.meta),
+      compiled: (latestRevision.meta as any)?.compiled,
     },
   }
 }

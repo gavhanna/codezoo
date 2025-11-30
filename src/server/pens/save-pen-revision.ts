@@ -3,12 +3,30 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireUser } from '@/server/auth/guards'
 import { serializePenForEditor } from './serialize'
+import {
+  DEFAULT_PREPROCESSORS,
+  type PreprocessorSelection,
+} from '@/types/preprocessors'
 
 const inputSchema = z.object({
   penId: z.string().uuid(),
   html: z.string(),
   css: z.string(),
   js: z.string(),
+  preprocessors: z
+    .object({
+      html: z.enum(['none', 'pug', 'markdown']).optional(),
+      css: z.enum(['none', 'scss', 'less']).optional(),
+      js: z.enum(['none', 'typescript', 'babel', 'coffeescript']).optional(),
+    })
+    .optional(),
+  compiled: z
+    .object({
+      html: z.string(),
+      css: z.string(),
+      js: z.string(),
+    })
+    .optional(),
   kind: z.nativeEnum(RevisionKind).optional(),
 })
 
@@ -27,7 +45,7 @@ export const savePenRevision = createServerFn({ method: 'POST' })
         revisions: {
           orderBy: { revNumber: 'desc' },
           take: 1,
-          select: { revNumber: true },
+          select: { revNumber: true, meta: true },
         },
       },
     })
@@ -40,6 +58,19 @@ export const savePenRevision = createServerFn({ method: 'POST' })
 
     const revisionKind = data.kind ?? RevisionKind.SNAPSHOT
 
+    const latestMeta = penRecord.revisions[0]?.meta ?? {}
+    const nextPreprocessors: PreprocessorSelection = {
+      ...DEFAULT_PREPROCESSORS,
+      ...(latestMeta as any)?.preprocessors,
+      ...data.preprocessors,
+    }
+
+    const nextMeta = {
+      ...latestMeta,
+      preprocessors: nextPreprocessors,
+      ...(data.compiled ? { compiled: data.compiled } : { compiled: undefined }),
+    }
+
     const [, updatedPen] = await ctx.prisma.$transaction([
       ctx.prisma.penRevision.create({
         data: {
@@ -50,6 +81,7 @@ export const savePenRevision = createServerFn({ method: 'POST' })
           html: data.html,
           css: data.css,
           js: data.js,
+          meta: nextMeta,
         },
       }),
       ctx.prisma.pen.update({

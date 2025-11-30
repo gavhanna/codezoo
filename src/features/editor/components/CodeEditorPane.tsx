@@ -36,6 +36,7 @@ interface CodeEditorPaneProps {
   onCollapse?: () => void
   collapseDisabled?: boolean
   collapsed?: boolean
+  badge?: string | null
 }
 
 export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
@@ -50,13 +51,21 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
   onCollapse,
   collapseDisabled = false,
   collapsed = false,
+  badge = null,
 }) => {
   return (
     <div className={`bg-slate-900 border border-white/5  overflow-hidden flex flex-col ${collapsed ? 'h-auto' : 'h-full'} ${className}`}>
       <div className="bg-slate-800 px-4 py-3 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-2">
           {icon}
-          <h3 className="text-sm font-medium text-gray-300">{title}</h3>
+          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <span>{title}</span>
+            {badge ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 uppercase tracking-wide">
+                {badge}
+              </span>
+            ) : null}
+          </h3>
         </div>
         {onCollapse && (
           <button
