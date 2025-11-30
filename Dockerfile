@@ -37,6 +37,7 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/.output .output
 COPY --from=prerelease /usr/src/app/package.json .
 COPY --from=prerelease /usr/src/app/prisma prisma
+COPY --from=prerelease /usr/src/app/prisma.config.ts prisma.config.ts
 # Copy generated Prisma client
 COPY --from=prerelease /usr/src/app/node_modules/.prisma node_modules/.prisma
 COPY --from=prerelease /usr/src/app/node_modules/@prisma/client node_modules/@prisma/client
