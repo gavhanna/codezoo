@@ -20,6 +20,8 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 # prerelease (build) stage
 # copy production dependencies and source code into final image
 FROM base AS prerelease
+ARG DATABASE_URL=postgresql://postgres:postgres@localhost:5432/codezoo?schema=public
+ENV DATABASE_URL=${DATABASE_URL}
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
